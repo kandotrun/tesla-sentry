@@ -102,6 +102,12 @@ function ManifestPanel({
         <div className="scope-strip">
           <span className="scope-strip__active">SentryClipsを対象</span>
           <span>RecentClips {manifest.excluded.recentClips}本を既定除外</span>
+          {manifest.excluded.eventPreviews > 0 ? (
+            <span>
+              Tesla生成プレビュー {manifest.excluded.eventPreviews}
+              本を除外（カメラ映像ではありません）
+            </span>
+          ) : null}
           {manifest.excluded.savedClips > 0 ? (
             <span>SavedClips {manifest.excluded.savedClips}本を除外</span>
           ) : null}
@@ -151,6 +157,12 @@ function ManifestPanel({
       <div className="scope-strip">
         <span className="scope-strip__active">SentryClipsを対象</span>
         <span>RecentClips {manifest.excluded.recentClips}本を既定除外</span>
+        {manifest.excluded.eventPreviews > 0 ? (
+          <span>
+            Tesla生成プレビュー {manifest.excluded.eventPreviews}
+            本を除外（カメラ映像ではありません）
+          </span>
+        ) : null}
         {manifest.excluded.savedClips > 0 ? (
           <span>SavedClips {manifest.excluded.savedClips}本を除外</span>
         ) : null}

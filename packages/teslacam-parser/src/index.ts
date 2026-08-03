@@ -53,6 +53,7 @@ export interface TeslaCamEvent {
 export interface TeslaCamManifest {
   readonly events: readonly TeslaCamEvent[];
   readonly excluded: {
+    readonly eventPreviews: number;
     readonly nonVideoFiles: number;
     readonly recentClips: number;
     readonly savedClips: number;
@@ -96,6 +97,7 @@ const CLIP_FILENAME = /^(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})-(\d{2})-(.+)\.mp4$/i
 
 interface ParsedPath {
   readonly eventId: string;
+  readonly hasDirectEventFile: boolean;
   readonly source: TeslaCamSource;
 }
 
@@ -114,6 +116,7 @@ function parsePath(segments: readonly string[], parsedFilename: ParsedFilename |
   if (sourceIndex < 0) {
     return {
       eventId: parsedFilename?.capturedAt.replace("T", "_").replaceAll(":", "-") ?? "unknown",
+      hasDirectEventFile: false,
       source: "unknown",
     };
   }
@@ -121,13 +124,14 @@ function parsePath(segments: readonly string[], parsedFilename: ParsedFilename |
   const source = SOURCE_SEGMENTS.get(segments[sourceIndex]?.toLowerCase() ?? "") ?? "unknown";
   const eventDirectory = segments[sourceIndex + 1];
   const hasEventDirectory = sourceIndex + 2 < segments.length;
+  const hasDirectEventFile = sourceIndex + 2 === segments.length - 1;
   const eventId = hasEventDirectory
     ? (eventDirectory ?? "unknown")
     : (parsedFilename?.capturedAt.replace("T", "_").replaceAll(":", "-") ??
       segments.at(-1) ??
       "unknown");
 
-  return { eventId, source };
+  return { eventId, hasDirectEventFile, source };
 }
 
 function parseFilename(filename: string): ParsedFilename | null {
@@ -166,6 +170,7 @@ export function parseTeslaCamManifest(files: readonly LocalFileDescriptor[]): Te
   const clipsByEvent = new Map<string, TeslaCamClip[]>();
   const warnings: ManifestWarning[] = [];
   const excluded = {
+    eventPreviews: 0,
     recentClips: 0,
     savedClips: 0,
     nonVideoFiles: 0,
@@ -209,6 +214,10 @@ export function parseTeslaCamManifest(files: readonly LocalFileDescriptor[]): Te
         relativePath: file.relativePath,
         message: "The MP4 is outside a recognized TeslaCam clip folder.",
       });
+      continue;
+    }
+    if (parsedPath.hasDirectEventFile && filename.toLowerCase() === "event.mp4") {
+      excluded.eventPreviews += 1;
       continue;
     }
 
