@@ -1,0 +1,16 @@
+{
+  "name": "@sentry-check/upload-contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@sentry-check/teslacam-parser": "*",
+    "@sentry-check/video-preflight": "*"
+  }
+}

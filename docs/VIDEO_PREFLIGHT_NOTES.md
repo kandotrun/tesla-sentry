@@ -23,6 +23,15 @@
 - MP4 parserがエラーにしたファイル
 - 読込上限までにmetadataを取得できなかったファイル
 
+## アップロード可否契約との関係
+
+`ready`はアップロード可否契約v1で`eligible`になるための必要条件だが、十分条件ではない。
+最終的なローカル分類は[アップロード可否契約 v1](UPLOAD_ELIGIBILITY_CONTRACT.md)が決める。
+
+manifest内の同一fingerprintの後続clipと、事前検査recordが重複したclipは`status: blocked`にする。
+事前検査recordがないclipは`status: pending`、`ineligibilityReason: missing_preflight`にし、非`ready`は同じcodeを`ineligibilityReason`として`status: blocked`にする。
+`ready`を申告していてもcodec、暗号化状態、動画時間、解像度、走査byte数が矛盾する場合はfail-closedで`status: blocked`にする。
+
 ## 読込方式
 
 ブラウザは最大1 MiB単位のrangeを読み、ISO BMFFのbox headerだけを境界検証しながら辿る。
@@ -64,9 +73,9 @@ byte capだけでは小さなboxを大量に並べるobject増幅を防げない
 
 ## この検査が保証しないこと
 
-この処理は全フレームをデコードしない。
+この処理はコンテナmetadataの走査であり、全フレームをデコードしない。
 
-したがって、途中フレームの破損、映像内容、TeslaCamとしての再生完全性は保証しない。
+したがって、`ready`でも途中フレームの破損、映像内容、ファイル全体の完全性、TeslaCamとしての再生完全性は保証しない。
 
 2026-08-03にKanの実TeslaCamデータで初回互換性を確認した。
 

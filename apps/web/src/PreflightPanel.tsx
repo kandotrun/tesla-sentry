@@ -1,3 +1,4 @@
+import type { UploadPlanV1 } from "@sentry-check/upload-contract";
 import type { VideoPreflightCode, VideoPreflightResult } from "@sentry-check/video-preflight";
 import type { ClipPreflightRecord, ClipPreflightState } from "./video-preflight";
 
@@ -30,6 +31,16 @@ function formatDuration(seconds: number): string {
       .padStart(2, "0")}`;
   }
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KiB`;
+  }
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GiB`;
 }
 
 function formatCodec(codec: string): string {
@@ -70,7 +81,13 @@ function readySummary(results: readonly VideoPreflightResult[]): string | null {
   return parts.join(" · ");
 }
 
-export function PreflightPanel({ state }: { readonly state: ClipPreflightState }) {
+export function PreflightPanel({
+  plan,
+  state,
+}: {
+  readonly plan: UploadPlanV1;
+  readonly state: ClipPreflightState;
+}) {
   const readyRecords = state.records.filter((record) => record.result.code === "ready");
   const reviewRecords = state.records
     .filter(isReviewRecord)
@@ -105,6 +122,18 @@ export function PreflightPanel({ state }: { readonly state: ClipPreflightState }
       <p className="preflight-panel__note">
         MP4の時間・コーデック・解像度・暗号化/破損候補をブラウザ内で確認しています。
         動画も結果もサーバーへ送信しません。
+      </p>
+      <div className="preflight-panel__counts preflight-panel__counts--plan">
+        <strong>次段階候補 {plan.totals.eligibleClips}本</strong>
+        <strong>検査待ち {plan.totals.pendingClips}本</strong>
+        <strong className="preflight-panel__warning">候補外 {plan.totals.blockedClips}本</strong>
+        <span>
+          候補合計 {formatBytes(plan.totals.eligibleBytes)} ·{" "}
+          {formatDuration(plan.totals.eligibleDurationSeconds)}
+        </span>
+      </div>
+      <p className="preflight-panel__note preflight-panel__note--plan">
+        候補判定のみで、アップロードはまだ開始しません。
       </p>
       {summary ? <p className="preflight-panel__summary">{summary}</p> : null}
       {complete && reviewRecords.length > 0 ? (

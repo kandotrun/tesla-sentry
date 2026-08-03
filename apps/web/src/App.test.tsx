@@ -34,6 +34,14 @@ function renderApp(probeVideoFile: ClipPreflightProbe = readyProbe) {
   return render(<App probeVideoFile={probeVideoFile} />);
 }
 
+function deferredPreflight() {
+  let resolve: (result: VideoPreflightResult) => void = () => undefined;
+  const promise = new Promise<VideoPreflightResult>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
+
 describe("App", () => {
   it("explains the local-first folder selection before any file is chosen", () => {
     renderApp();
@@ -118,6 +126,92 @@ describe("App", () => {
     expect(screen.getByText("要確認 1本")).toBeInTheDocument();
     expect(screen.getByText("2026-08-03_12-32-00-back.mp4")).toBeInTheDocument();
     expect(screen.getByText("暗号化された動画")).toBeInTheDocument();
+  });
+
+  it("updates upload eligibility totals from partial preflight records regardless of completion order", async () => {
+    const pending = new Map<string, ReturnType<typeof deferredPreflight>>();
+    const probe = vi.fn((file: File) => {
+      const deferred = deferredPreflight();
+      pending.set(file.name, deferred);
+      return deferred.promise;
+    });
+    renderApp(probe);
+    const eventPath = "TeslaCam/SentryClips/2026-08-03_12-34-56";
+    const back = localFile(`${eventPath}/2026-08-03_12-32-00-back.mp4`, 4 * MiB);
+    const front = localFile(`${eventPath}/2026-08-03_12-32-00-front.mp4`, 2 * MiB);
+
+    fireEvent.change(screen.getByLabelText("TeslaCamフォルダを選択"), {
+      target: { files: [back, front] },
+    });
+
+    await waitFor(() => expect(probe).toHaveBeenCalledTimes(2));
+    expect(screen.getByText("次段階候補 0本")).toBeInTheDocument();
+    expect(screen.getByText("検査待ち 2本")).toBeInTheDocument();
+    expect(screen.getByText("候補外 0本")).toBeInTheDocument();
+
+    await act(async () => {
+      pending.get(front.name)?.resolve(readyResult({ durationSeconds: 61 }));
+      await Promise.resolve();
+    });
+
+    expect(await screen.findByText("検査中 1/2本")).toBeInTheDocument();
+    expect(screen.getByText("次段階候補 1本")).toBeInTheDocument();
+    expect(screen.getByText("検査待ち 1本")).toBeInTheDocument();
+    expect(screen.getByText("候補外 0本")).toBeInTheDocument();
+    expect(screen.getByText("候補合計 2.0 MiB · 1:01")).toBeInTheDocument();
+    expect(
+      screen.getByText("候補判定のみで、アップロードはまだ開始しません。"),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      pending
+        .get(back.name)
+        ?.resolve(readyResult({ code: "encrypted", codec: "encv", encrypted: true }));
+      await Promise.resolve();
+    });
+
+    expect(await screen.findByText("解析可能 1本")).toBeInTheDocument();
+    expect(screen.getByText("要確認 1本")).toBeInTheDocument();
+    expect(screen.getByText("次段階候補 1本")).toBeInTheDocument();
+    expect(screen.getByText("検査待ち 0本")).toBeInTheDocument();
+    expect(screen.getByText("候補外 1本")).toBeInTheDocument();
+  });
+
+  it("keeps a ready clip with an unknown camera suffix in the next-stage candidates", async () => {
+    renderApp();
+    const unknownCamera = localFile(
+      "TeslaCam/SentryClips/2026-08-03_12-34-56/2026-08-03_12-32-00-front_bumper.mp4",
+    );
+
+    fireEvent.change(screen.getByLabelText("TeslaCamフォルダを選択"), {
+      target: { files: [unknownCamera] },
+    });
+
+    expect(await screen.findByText("解析可能 1本")).toBeInTheDocument();
+    expect(screen.getByText("未識別")).toBeInTheDocument();
+    expect(screen.getByText("次段階候補 1本")).toBeInTheDocument();
+    expect(screen.getByText("検査待ち 0本")).toBeInTheDocument();
+    expect(screen.getByText("候補外 0本")).toBeInTheDocument();
+  });
+
+  it("uses first-wins preflight for duplicate manifest fingerprints", async () => {
+    const duplicatePath = "TeslaCam/SentryClips/2026-08-03_12-34-56/2026-08-03_12-32-00-front.mp4";
+    const first = localFile(duplicatePath, 3 * MiB);
+    const later = localFile(duplicatePath, 3 * MiB);
+    const probe = vi.fn(async (_file: File) => readyResult({ durationSeconds: 30 }));
+    renderApp(probe);
+
+    fireEvent.change(screen.getByLabelText("TeslaCamフォルダを選択"), {
+      target: { files: [first, later] },
+    });
+
+    expect(await screen.findByText("解析可能 1本")).toBeInTheDocument();
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(probe.mock.calls[0]?.[0]).toBe(first);
+    expect(screen.getByText("次段階候補 1本")).toBeInTheDocument();
+    expect(screen.getByText("検査待ち 0本")).toBeInTheDocument();
+    expect(screen.getByText("候補外 1本")).toBeInTheDocument();
+    expect(screen.getByText("候補合計 3.0 MiB · 0:30")).toBeInTheDocument();
   });
 
   it("ignores an earlier folder preflight that completes after a reselection", async () => {
