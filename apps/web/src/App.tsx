@@ -4,6 +4,7 @@ import {
   type TeslaCamEvent,
   type TeslaCamManifest,
 } from "@sentry-check/teslacam-parser";
+import { buildUploadPlanV1, type UploadPlanV1 } from "@sentry-check/upload-contract";
 import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { PreflightPanel } from "./PreflightPanel";
 import "./styles.css";
@@ -82,9 +83,11 @@ function EventRow({ event }: { readonly event: TeslaCamEvent }) {
 
 function ManifestPanel({
   manifest,
+  plan,
   preflight,
 }: {
   readonly manifest: TeslaCamManifest;
+  readonly plan: UploadPlanV1;
   readonly preflight: ClipPreflightState | null;
 }) {
   if (manifest.totals.eventCount === 0) {
@@ -152,7 +155,7 @@ function ManifestPanel({
         </div>
       </dl>
 
-      {preflight ? <PreflightPanel state={preflight} /> : null}
+      {preflight ? <PreflightPanel plan={plan} state={preflight} /> : null}
 
       <div className="scope-strip">
         <span className="scope-strip__active">SentryClipsを対象</span>
@@ -236,16 +239,23 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
     const filesByFingerprint = new Map<string, File>();
     for (const [index, descriptor] of descriptors.entries()) {
       const file = files[index];
-      if (file) {
-        filesByFingerprint.set(descriptorFingerprint(descriptor), file);
+      const fingerprint = descriptorFingerprint(descriptor);
+      if (file && !filesByFingerprint.has(fingerprint)) {
+        filesByFingerprint.set(fingerprint, file);
       }
     }
-    const clipFiles: ClipFileInput[] = nextManifest.events
-      .flatMap((teslaEvent) => teslaEvent.clips)
-      .flatMap((clip) => {
-        const file = filesByFingerprint.get(clip.fingerprint);
-        return file ? [{ file, fingerprint: clip.fingerprint }] : [];
-      });
+    const queuedFingerprints = new Set<string>();
+    const clipFiles: ClipFileInput[] = [];
+    for (const clip of nextManifest.events.flatMap((teslaEvent) => teslaEvent.clips)) {
+      if (queuedFingerprints.has(clip.fingerprint)) {
+        continue;
+      }
+      queuedFingerprints.add(clip.fingerprint);
+      const file = filesByFingerprint.get(clip.fingerprint);
+      if (file) {
+        clipFiles.push({ file, fingerprint: clip.fingerprint });
+      }
+    }
 
     if (clipFiles.length === 0) {
       return;
@@ -270,6 +280,8 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
       // A new folder selection aborts the old scan. Per-file probe failures become review results.
     });
   }
+
+  const uploadPlan = manifest ? buildUploadPlanV1(manifest, preflight?.records ?? []) : null;
 
   return (
     <main className="app-shell">
@@ -336,8 +348,8 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
         </aside>
       </section>
 
-      {manifest ? (
-        <ManifestPanel manifest={manifest} preflight={preflight} />
+      {manifest && uploadPlan ? (
+        <ManifestPanel manifest={manifest} plan={uploadPlan} preflight={preflight} />
       ) : (
         <section className="waiting-grid" aria-label="処理ステップ">
           <article>

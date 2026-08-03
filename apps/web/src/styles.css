@@ -454,12 +454,28 @@
     border-color: #6d3526;
   }
 
+  .preflight-panel__counts--plan {
+    justify-content: flex-start;
+    margin-top: 18px;
+  }
+
+  .preflight-panel__counts--plan span {
+    align-self: center;
+    color: #d4d8d4;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
   .preflight-panel__note {
     max-width: 720px;
     margin-top: 16px;
     color: #969d99;
     font-size: 0.75rem;
     line-height: 1.7;
+  }
+
+  .preflight-panel__note--plan {
+    margin-top: 9px;
   }
 
   .preflight-panel__summary {
