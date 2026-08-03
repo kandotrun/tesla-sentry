@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+.wrangler/
+.dev.vars*
+.env*
+!.env.example
+.DS_Store
+*.log
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+*.webm
+fixtures/private/
+datasets/private/
