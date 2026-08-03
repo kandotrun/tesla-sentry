@@ -413,6 +413,92 @@
     letter-spacing: -0.03em;
   }
 
+  .preflight-panel {
+    margin: 0 38px 30px;
+    padding: 24px 26px;
+    background: linear-gradient(135deg, rgba(184, 246, 90, 0.06), transparent 58%), #101413;
+    border: 1px solid #34402e;
+  }
+
+  .preflight-panel__heading {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .preflight-panel__heading .eyebrow {
+    margin-bottom: 8px;
+  }
+
+  .preflight-panel__heading h3 {
+    font-size: 1.05rem;
+  }
+
+  .preflight-panel__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .preflight-panel__counts strong {
+    padding: 7px 10px;
+    color: var(--green);
+    border: 1px solid #4e662a;
+    font-size: 0.7rem;
+  }
+
+  .preflight-panel__counts .preflight-panel__warning {
+    color: #ffb098;
+    border-color: #6d3526;
+  }
+
+  .preflight-panel__note {
+    max-width: 720px;
+    margin-top: 16px;
+    color: #969d99;
+    font-size: 0.75rem;
+    line-height: 1.7;
+  }
+
+  .preflight-panel__summary {
+    margin-top: 18px;
+    color: #e5e8e5;
+    font-family: "DIN Alternate", "Arial Narrow", "BIZ UDPGothic", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  .preflight-issues {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .preflight-issues li {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 9px;
+    border-top: 1px solid #303533;
+    font-size: 0.7rem;
+  }
+
+  .preflight-issues span {
+    overflow: hidden;
+    color: #b8bdb9;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .preflight-issues strong {
+    flex: 0 0 auto;
+    color: #ffb098;
+  }
+
   .scope-strip {
     display: flex;
     flex-wrap: wrap;
@@ -603,12 +689,14 @@
     }
 
     .manifest__header,
-    .event-row {
+    .event-row,
+    .preflight-panel__heading {
       align-items: flex-start;
       flex-direction: column;
     }
 
-    .camera-list {
+    .camera-list,
+    .preflight-panel__counts {
       justify-content: flex-start;
     }
   }
@@ -649,6 +737,17 @@
     .manifest__footer,
     .empty-result {
       padding-inline: 22px;
+    }
+
+    .preflight-panel {
+      margin-inline: 22px;
+      padding: 20px;
+    }
+
+    .preflight-issues li {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
     }
 
     .manifest__status {

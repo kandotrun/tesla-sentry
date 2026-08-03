@@ -5,18 +5,21 @@
 1. `docs/PROJECT_CONTEXT.md`
 2. `docs/product/tesla-sentry-ai-service-plan-2026-08-03.md`
 3. `docs/TESLACAM_FORMAT_NOTES.md`
-4. このファイル
+4. `docs/VIDEO_PREFLIGHT_NOTES.md`
+5. このファイル
 
 実装と本書が競合する場合は、最新の受入条件と現在の実装を優先し、矛盾をドキュメントへ反映すること。
 
 ## 現在の実装優先順位
 
 1. ブラウザ内TeslaCam manifest
-2. R2への再開可能な直接アップロード
-3. 1イベントのFFmpeg前処理
-4. 固定Schemaの判定結果表示
-5. 候補抽出とAI判定
-6. 認証・課金・β運用
+2. ブラウザ内MP4事前検査
+3. 実TeslaCamデータの互換性確認
+4. R2への再開可能な直接アップロード
+5. 1イベントのFFmpeg前処理
+6. 固定Schemaの判定結果表示
+7. 候補抽出とAI判定
+8. 認証、課金、β運用
 
 最初から全構成を作らない。各PRはユーザーが触れる一つの縦切りか、明確な基盤契約に限定する。
 

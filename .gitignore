@@ -8,6 +8,7 @@ coverage/
 .DS_Store
 *.log
 *.mp4
+!packages/video-preflight/tests/fixtures/one-second-avc.mp4
 *.mov
 *.m4v
 *.avi

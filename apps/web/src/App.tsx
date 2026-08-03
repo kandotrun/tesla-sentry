@@ -4,8 +4,18 @@ import {
   type TeslaCamEvent,
   type TeslaCamManifest,
 } from "@sentry-check/teslacam-parser";
-import { type ChangeEvent, useId, useState } from "react";
+import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
+import { PreflightPanel } from "./PreflightPanel";
 import "./styles.css";
+import {
+  type ClipFileInput,
+  type ClipPreflightProbe,
+  type ClipPreflightState,
+  defaultClipPreflightProbe,
+  preflightClipFiles,
+} from "./video-preflight";
+
+export type { ClipPreflightProbe } from "./video-preflight";
 
 const CAMERA_LABELS = new Map([
   ["front", "前方"],
@@ -25,6 +35,10 @@ function toDescriptor(file: File): LocalFileDescriptor {
     size: file.size,
     type: file.type,
   };
+}
+
+function descriptorFingerprint(file: LocalFileDescriptor): string {
+  return `${file.relativePath}:${file.size}:${file.lastModified}`;
 }
 
 function formatBytes(bytes: number): string {
@@ -66,7 +80,13 @@ function EventRow({ event }: { readonly event: TeslaCamEvent }) {
   );
 }
 
-function ManifestPanel({ manifest }: { readonly manifest: TeslaCamManifest }) {
+function ManifestPanel({
+  manifest,
+  preflight,
+}: {
+  readonly manifest: TeslaCamManifest;
+  readonly preflight: ClipPreflightState | null;
+}) {
   if (manifest.totals.eventCount === 0) {
     return (
       <>
@@ -105,7 +125,7 @@ function ManifestPanel({ manifest }: { readonly manifest: TeslaCamManifest }) {
     <section className="manifest" aria-live="polite">
       <div className="manifest__header">
         <div>
-          <p className="eyebrow eyebrow--green">LOCAL MANIFEST / READY</p>
+          <p className="eyebrow eyebrow--green">LOCAL MANIFEST / PREFLIGHT</p>
           <h2>アップロード前の確認</h2>
         </div>
         <p className="manifest__status">まだ外部送信されていません</p>
@@ -125,6 +145,8 @@ function ManifestPanel({ manifest }: { readonly manifest: TeslaCamManifest }) {
           <dd>{formatBytes(manifest.totals.selectedBytes)}</dd>
         </div>
       </dl>
+
+      {preflight ? <PreflightPanel state={preflight} /> : null}
 
       <div className="scope-strip">
         <span className="scope-strip__active">SentryClipsを対象</span>
@@ -157,25 +179,84 @@ function ManifestPanel({ manifest }: { readonly manifest: TeslaCamManifest }) {
 
       <footer className="manifest__footer">
         <p>
-          次は、このmanifestを基準に再開可能なR2直接アップロードを接続します。
-          現時点では解析・課金は始まりません。
+          MP4事前検査を通過した動画だけを、次段階のアップロード候補にします。
+          現時点ではアップロード・解析・課金は始まりません。
         </p>
       </footer>
     </section>
   );
 }
 
-export function App() {
+interface AppProps {
+  readonly probeVideoFile?: ClipPreflightProbe;
+}
+
+export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {}) {
   const inputId = useId();
   const [manifest, setManifest] = useState<TeslaCamManifest | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
+  const [preflight, setPreflight] = useState<ClipPreflightState | null>(null);
+  const activeScan = useRef<AbortController | null>(null);
+  const scanVersion = useRef(0);
+
+  useEffect(
+    () => () => {
+      activeScan.current?.abort();
+    },
+    [],
+  );
 
   function handleFolderSelection(event: ChangeEvent<HTMLInputElement>) {
+    activeScan.current?.abort();
+    const controller = new AbortController();
+    activeScan.current = controller;
+    scanVersion.current += 1;
+    const currentVersion = scanVersion.current;
+
     const files = Array.from(event.currentTarget.files ?? []);
     const descriptors = files.map(toDescriptor);
-    setManifest(parseTeslaCamManifest(descriptors));
+    const nextManifest = parseTeslaCamManifest(descriptors);
+    setManifest(nextManifest);
+    setPreflight(null);
     const firstPath = descriptors[0]?.relativePath.replaceAll("\\", "/");
     setFolderName(firstPath?.split("/")[0] ?? null);
+
+    const filesByFingerprint = new Map<string, File>();
+    for (const [index, descriptor] of descriptors.entries()) {
+      const file = files[index];
+      if (file) {
+        filesByFingerprint.set(descriptorFingerprint(descriptor), file);
+      }
+    }
+    const clipFiles: ClipFileInput[] = nextManifest.events
+      .flatMap((teslaEvent) => teslaEvent.clips)
+      .flatMap((clip) => {
+        const file = filesByFingerprint.get(clip.fingerprint);
+        return file ? [{ file, fingerprint: clip.fingerprint }] : [];
+      });
+
+    if (clipFiles.length === 0) {
+      return;
+    }
+
+    setPreflight({ completed: 0, records: [], total: clipFiles.length });
+    void preflightClipFiles(clipFiles, probeVideoFile, controller.signal, (record) => {
+      if (controller.signal.aborted || currentVersion !== scanVersion.current) {
+        return;
+      }
+      setPreflight((current) => {
+        if (!current || current.total !== clipFiles.length) {
+          return current;
+        }
+        return {
+          completed: current.completed + 1,
+          records: [...current.records, record],
+          total: current.total,
+        };
+      });
+    }).catch(() => {
+      // A new folder selection aborts the old scan. Per-file probe failures become review results.
+    });
   }
 
   return (
@@ -187,7 +268,7 @@ export function App() {
           <span className="wordmark__slash">/</span>
           <span>CHECK</span>
         </a>
-        <span className="build-label">ローカル確認版 · 動画送信なし</span>
+        <span className="build-label">ローカル事前検査版 · 動画送信なし</span>
       </header>
 
       <section className="hero" id="top">
@@ -200,7 +281,7 @@ export function App() {
           </h1>
           <p className="hero__lead">
             TeslaCamフォルダを選ぶと、PC内でSentryClipsをイベント単位に整理。
-            件数・容量・除外対象をアップロード前に確認できます。
+            件数・容量に加え、MP4の時間・コーデック・破損候補をアップロード前に確認できます。
           </p>
           <div className="selector">
             <input
@@ -214,7 +295,7 @@ export function App() {
             />
             <label className="selector__button" htmlFor={inputId}>
               <span aria-hidden="true">＋</span>
-              フォルダを選んで整理結果を見る
+              フォルダを選んで事前検査する
             </label>
             <p className="selector__hint">
               {folderName
@@ -232,19 +313,19 @@ export function App() {
           </div>
           <h2>フォルダを選択しても、動画本体は送信されません</h2>
           <p>
-            現在のMVPはファイル名・相対パス・容量を、このブラウザ内だけで整理します。
+            ファイル名・相対パス・容量と、必要なMP4メタデータをこのブラウザ内だけで読み取ります。
             動画もメタデータもサーバーへ送信しません。
           </p>
           <ul>
             <li>Teslaアカウント連携なし</li>
             <li>RecentClipsは既定除外</li>
-            <li>このMVPではローカル整理まで</li>
+            <li>MP4ヘッダーもブラウザ内だけで確認します。</li>
           </ul>
         </aside>
       </section>
 
       {manifest ? (
-        <ManifestPanel manifest={manifest} />
+        <ManifestPanel manifest={manifest} preflight={preflight} />
       ) : (
         <section className="waiting-grid" aria-label="処理ステップ">
           <article>
@@ -259,8 +340,8 @@ export function App() {
           </article>
           <article>
             <span>03</span>
-            <h2>送る前に判断</h2>
-            <p>件数・容量・除外・未識別ファイルを事前表示。</p>
+            <h2>送る前に検査</h2>
+            <p>時間・コーデック・解像度・破損候補を事前表示。</p>
           </article>
         </section>
       )}

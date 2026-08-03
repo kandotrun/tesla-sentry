@@ -6,15 +6,22 @@ TeslaCamフォルダを選ぶだけで、数百本のセントリー映像から
 
 ## 現在地
 
-最初のローカル縦切りが動作します。
+アップロード前のブラウザ内縦切りが動作します。
 
 1. デスクトップChromeでTeslaCamフォルダを選択する
-2. `SentryClips`をイベント・カメラ単位にローカル整理する
-3. アップロード前に件数・容量・除外対象・未識別ファイルを確認する
+2. `SentryClips`をイベントとカメラ単位にローカル整理する
+3. 対象MP4の時間、コーデック、解像度、暗号化と破損候補をブラウザ内で確認する
+4. 件数、容量、除外対象、未識別ファイル、要確認クリップを表示する
 
-4方向の基本カメラに加え、AI4/HW4の左右ピラーカメラと旧`rear_view`接尾辞を認識します。未知のカメラ接尾辞も動画を捨てず、要確認として残します。
+4方向の基本カメラに加え、AI4/HW4の左右ピラーカメラと旧`rear_view`接尾辞を認識します。
+未知のカメラ接尾辞も動画を捨てず、要確認として残します。
 
-この段階では動画もメタデータも外部へ送信しません。R2アップロード、動画解析、AI判定は、実際のTeslaCamフォルダでパーサーを確認してから段階的に追加します。
+MP4事前検査はファイル全体を一括読込せず、1 MiB単位で必要なboxへseekします。
+実際に読み込む上限は1ファイルあたり8 MiBです。
+この検査はコンテナのメタデータを確認するものであり、全フレームの復号や完全性を保証しません。
+
+この段階では動画もメタデータも外部へ送信しません。
+R2アップロード、動画解析、AI判定は、実際のTeslaCamフォルダで互換性を確認してから段階的に追加します。
 
 ## プロダクト原則
 
@@ -47,12 +54,14 @@ npm run check
 npm run cf:dry-run
 ```
 
-`npm run check`はパーサー／UIのテスト、TypeScript型検査、Biome、プロダクションビルドを実行します。`cf:dry-run`はCloudflare Workers Static Assetsのバンドルだけを検証し、デプロイはしません。
+`npm run check`はmanifestパーサー、MP4事前検査、UIのテスト、TypeScript型検査、Biome、プロダクションビルドを実行します。
+`cf:dry-run`はCloudflare Workers Static Assetsのバンドルだけを検証し、デプロイはしません。
 
 ## 構成
 
 ```text
-apps/web/                   React UI + Cloudflare Static Assets
-packages/teslacam-parser/  TeslaCamパス・イベント・カメラ整理
-docs/                       プロダクト判断と原計画
+apps/web/                    React UI + Cloudflare Static Assets
+packages/teslacam-parser/   TeslaCamパス、イベント、カメラ整理
+packages/video-preflight/   MP4ヘッダーの分割読込と事前判定
+docs/                        プロダクト判断と原計画
 ```
