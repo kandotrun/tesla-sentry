@@ -1,0 +1,18 @@
+{
+  "name": "@sentry-check/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "vite build",
+    "cf:dry-run": "npm run build && wrangler deploy --dry-run --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@sentry-check/teslacam-parser": "*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

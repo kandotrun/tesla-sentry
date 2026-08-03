@@ -1,0 +1,38 @@
+{
+  "name": "tesla-sentry",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@sentry-check/web --",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run test && npm run typecheck && npm run lint && npm run build",
+    "cf:dry-run": "npm run cf:dry-run --workspace=@sentry-check/web"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.6",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "7.0.0",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "30.0.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.0",
+    "vitest": "4.1.10",
+    "wrangler": "4.118.0"
+  }
+}
