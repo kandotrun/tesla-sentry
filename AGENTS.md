@@ -4,7 +4,8 @@
 
 1. `docs/PROJECT_CONTEXT.md`
 2. `docs/product/tesla-sentry-ai-service-plan-2026-08-03.md`
-3. このファイル
+3. `docs/TESLACAM_FORMAT_NOTES.md`
+4. このファイル
 
 実装と本書が競合する場合は、最新の受入条件と現在の実装を優先し、矛盾をドキュメントへ反映すること。
 
