@@ -58,6 +58,7 @@ describe("App", () => {
       localFile(`${eventPath}/2026-08-03_12-32-00-back.mp4`),
       localFile(`${eventPath}/2026-08-03_12-32-00-left_repeater.mp4`),
       localFile(`${eventPath}/2026-08-03_12-32-00-right_repeater.mp4`),
+      localFile(`${eventPath}/event.mp4`, 512 * 1024),
       localFile("TeslaCam/RecentClips/2026-08-03_12-33-00-front.mp4"),
       localFile("TeslaCam/FutureClips/2026-08-03_12-35-00-front.mp4"),
     ];
@@ -70,6 +71,9 @@ describe("App", () => {
     expect(screen.getByText("4クリップ")).toBeInTheDocument();
     expect(screen.getByText("8.0 MiB")).toBeInTheDocument();
     expect(screen.getByText("RecentClips 1本を既定除外")).toBeInTheDocument();
+    expect(
+      screen.getByText("Tesla生成プレビュー 1本を除外（カメラ映像ではありません）"),
+    ).toBeInTheDocument();
     expect(screen.getByText("未識別の動画 1本")).toBeInTheDocument();
     expect(screen.getByText("2026-08-03 12:34:56")).toBeInTheDocument();
     await waitFor(() => expect(probe).toHaveBeenCalledTimes(4));
