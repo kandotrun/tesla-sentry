@@ -1,0 +1,23 @@
+[project]
+name = "tesla-sentry-analyzer"
+version = "0.1.0"
+description = "Fail-closed FFmpeg preprocessing for TeslaCam events"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = ["scripts", "src", "tests"]
+extraPaths = ["src"]
+typeCheckingMode = "strict"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["B", "BLE", "DTZ", "E", "F", "I", "RUF", "SIM", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# TeslaCam filenames contain event-local wall time without an offset. Only relative deltas are used.
+"src/sentry_analyzer/preprocess.py" = ["DTZ007"]
