@@ -49,7 +49,14 @@ describe("App", () => {
     expect(
       screen.getByRole("heading", { name: "セントリー映像、全部見なくていい。" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("フォルダを選択しても、動画本体は送信されません")).toBeInTheDocument();
+    expect(screen.getByText("ローカル事前検査 · 明示操作後のみ送信")).toBeInTheDocument();
+    expect(
+      screen.getByText("フォルダ選択と事前検査だけでは、動画は送信されません"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/アップロードボタンを明示的に押した場合だけ、対象動画を送信します。/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("ローカル事前検査版 · 動画送信なし")).not.toBeInTheDocument();
     expect(screen.getByText("フォルダを選んで事前検査する")).toBeInTheDocument();
     expect(screen.getByText("MP4ヘッダーもブラウザ内だけで確認します。")).toBeInTheDocument();
     const input = screen.getByLabelText("TeslaCamフォルダを選択");
@@ -102,6 +109,15 @@ describe("App", () => {
 
     expect(await screen.findByText("解析可能 2本")).toBeInTheDocument();
     expect(screen.getByText("動画合計 2:00 · H.264 · 160×90")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /この事前検査中は、動画も結果もサーバーへ送信しません。\s*送信はアップロードボタンを明示的に押した後だけ始まります。/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("送信は明示操作後のみ")).toBeInTheDocument();
+    expect(
+      screen.getByText(/候補判定だけではアップロード・解析・課金を開始しません。/),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/要確認 \d+本/)).not.toBeInTheDocument();
   });
 
@@ -160,7 +176,9 @@ describe("App", () => {
     expect(screen.getByText("候補外 0本")).toBeInTheDocument();
     expect(screen.getByText("候補合計 2.0 MiB · 1:01")).toBeInTheDocument();
     expect(
-      screen.getByText("候補判定のみで、アップロードはまだ開始しません。"),
+      screen.getByText(
+        "候補判定だけではアップロードを開始しません。送信には上の明示操作が必要です。",
+      ),
     ).toBeInTheDocument();
 
     await act(async () => {

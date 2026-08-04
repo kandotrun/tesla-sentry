@@ -1,0 +1,19 @@
+{
+  "name": "@sentry-check/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8788 --config wrangler.jsonc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "cf:dry-run": "wrangler deploy --dry-run --config wrangler.jsonc"
+  },
+  "dependencies": {
+    "@sentry-check/upload-session": "*",
+    "@sentry-check/video-preflight": "*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260801.1"
+  }
+}

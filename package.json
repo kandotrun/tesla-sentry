@@ -17,7 +17,7 @@
     "format": "biome check --write .",
     "build": "npm run build --workspaces --if-present",
     "check": "npm run test && npm run typecheck && npm run lint && npm run build",
-    "cf:dry-run": "npm run cf:dry-run --workspace=@sentry-check/web"
+    "cf:dry-run": "npm run cf:dry-run --workspaces --if-present"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
