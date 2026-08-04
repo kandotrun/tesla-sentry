@@ -71,6 +71,18 @@ MP4事前検査はコンテナのメタデータだけを確認する。
 - 明示的なボタン操作後だけ送信し、フォルダ選択・事前検査だけでは送信しない
 - multipart、中断再開、重複スキップ、本番R2、認証、課金は含めない
 
+第6PRは1イベントのFFmpeg前処理境界を固定する。
+
+- Python 3.11の固定Schema CLIで、最大256 clipをevent-local時刻へ整列
+- 各clipをFFprobeで再検証し、H.264/HEVC、最大4時間、解像度、平均frame rateをfail-closedで確認
+- 各clipの中点から、upscaleしない最大幅640 pxの代表JPEGを1枚生成
+- 1fpsの短尺clipでも最終frame後をseekしないよう、`duration - 1 frame`を代表時刻の上限に設定
+- 全成功を`ready`、一部失敗を理由付き`partial`、全失敗を`failed`として固定Schemaへ保存
+- 未知cameraは`unknown`として代表frameまで保持し、後段profileで`判定不能`または要確認へ回す
+- 絶対path、traversal、入力root外symlink、重複IDを処理開始前に拒否
+- non-root UID/GID 10001、networkなし、read-only root filesystem、capabilityなしでDocker smokeを実行
+- Python standard libraryだけをruntime依存とし、Ruffとstrict PyrightをCIへ追加
+
 2026-08-04のNAS実データ匿名スモークでは、書き込み継続中のスナップショットを使って次を確認した。
 
 - production manifest parserで`SentryClips` 33イベント、カメラ映像1,626本、補助`event.mp4` 33本を分類し、warning 0
@@ -78,14 +90,14 @@ MP4事前検査はコンテナのメタデータだけを確認する。
 - 6方向が揃う1イベント（約181 MB）をproduction preflightへ通し、6/6 `ready`、6/6 H.264、5本が1448×938、front 1本が2896×1876
 - 同じ6本をFFmpegで全フレームdecodeし、6/6成功
 - 実ChromeからVite proxy、Worker、ローカルR2へBearer headerで送信し、サイズ、SHA-256、MP4再検証とstatus確認が6/6成功
+- 同じ約181 MB・6方向を前処理Containerへ匿名化して渡し、4,182 msで6/6 `ready`、issue 0、代表JPEG 6枚を生成
 - 実パス、撮影日時、映像、署名トークンはレポートへ保存しない
 
 ## 次の実装境界
 
-1. 1イベントのFFmpeg前処理境界を固定する
-2. 車種・年式・カメラ世代・解像度で選ぶ固定カメラプロファイルを定義し、方向別の車体マスクと近接ROIを正規化座標で持つ
-3. 複数カメラの時刻差、車体揺れ、遮蔽を考慮して候補区間を抽出する
-4. `接触可能性あり`、`近接のみ`、`判定不能`を含む固定Schemaの判定結果を表示する
+1. 車種・年式・カメラ世代・解像度で選ぶ固定カメラプロファイルを定義し、方向別の車体マスクと近接ROIを正規化座標で持つ
+2. 複数カメラの時刻差、車体揺れ、遮蔽を考慮して候補区間を抽出する
+3. `接触可能性あり`、`近接のみ`、`判定不能`を含む固定Schemaの判定結果を表示する
 
 本番R2、認証、課金は、multipart・中断再開・重複スキップと削除ライフサイクルを設計・検証してから進める。
 
@@ -100,7 +112,7 @@ MP4事前検査はコンテナのメタデータだけを確認する。
 ## ソース優先順位
 
 1. 最新の受入条件と実装・テスト
-2. `docs/UPLOAD_ELIGIBILITY_CONTRACT.md`（アップロード可否契約v1）
+2. `docs/UPLOAD_ELIGIBILITY_CONTRACT.md`と`docs/EVENT_PREPROCESSING_CONTRACT.md`
 3. 本ファイル
 4. `docs/product/tesla-sentry-ai-service-plan-2026-08-03.md`
 5. PR・Issue・チャット上の古い議論

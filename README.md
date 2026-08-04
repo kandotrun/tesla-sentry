@@ -6,13 +6,14 @@ TeslaCamフォルダを選ぶだけで、数百本のセントリー映像から
 
 ## 現在地
 
-ブラウザ内の事前検査と、開発環境R2への明示的なアップロード縦切り（1ファイル単位PUT・複数ジョブ自動分割）が動作します。
+ブラウザ内の事前検査、開発環境R2への明示的なアップロード縦切り、1イベント単位のFFmpeg前処理Containerが動作します。
 
 1. デスクトップChromeでTeslaCamフォルダを選択する
 2. `SentryClips`をイベントとカメラ単位にローカル整理する
 3. 対象MP4の時間、コーデック、解像度、暗号化と破損候補をブラウザ内で確認する
 4. 件数、容量、除外対象、未識別ファイル、要確認クリップを表示する
 5. 明示操作後だけ、`eligible`動画を開発用Worker経由でローカルR2へ保存・再検証する
+6. 検証済みの1イベントをFFprobeで再検証し、相対timelineと6方向の代表JPEGを生成する
 
 ローカルのアップロード可否契約v1は、manifestと事前検査recordを次の三状態へ分類します。
 
@@ -30,7 +31,7 @@ MP4事前検査はファイル全体を一括読込せず、1 MiB単位で必要
 
 フォルダ選択と事前検査だけでは、動画も結果も外部へ送信しません。
 `eligible`動画は、開発環境アップロードを明示的に押した場合だけ、ローカルWorker/R2へ送信します。本番ストレージには接続しません。
-実TeslaCamの初回互換性確認、アップロード可否契約v1、開発用の1ファイル単位PUT・複数ジョブ分割・サーバー側再検証を実装済みです。次はFFmpeg前処理と固定カメラプロファイルを追加し、本番化前にmultipart・中断再開を実装します。
+実TeslaCamの初回互換性確認、アップロード可否契約v1、開発用の1ファイル単位PUT・複数ジョブ分割・サーバー側再検証、FFmpeg前処理を実装済みです。次は車種・年式・カメラ世代別の固定カメラプロファイルと車体マスクを追加し、本番化前にmultipart・中断再開を実装します。
 
 ## プロダクト原則
 
@@ -45,15 +46,19 @@ MP4事前検査はファイル全体を一括読込せず、1 MiB単位で必要
 
 - [プロジェクトコンテキスト](docs/PROJECT_CONTEXT.md)
 - [アップロード可否契約 v1](docs/UPLOAD_ELIGIBILITY_CONTRACT.md)
+- [イベント前処理契約 v1](docs/EVENT_PREPROCESSING_CONTRACT.md)
 - [事業・MVP計画書（2026-08-03）](docs/product/tesla-sentry-ai-service-plan-2026-08-03.md)
 - [エージェント向け開発ルール](AGENTS.md)
 
 ## 開発
 
-前提：Node.js 24 Active LTS（`.nvmrc`）とnpm。
+前提：Node.js 24 Active LTS（`.nvmrc`）、npm、Python 3.11以上、FFmpeg。
 
 ```bash
 npm install
+python3 -m venv .venv-analyzer
+source .venv-analyzer/bin/activate
+python3 -m pip install -r containers/analyzer/requirements-dev.txt
 npm run dev
 ```
 
@@ -62,10 +67,12 @@ npm run dev
 ```bash
 npm run check
 npm run cf:dry-run
+npm run analyzer:container-smoke
 ```
 
-`npm run check`はmanifestパーサー、MP4事前検査、アップロード可否契約、UIのテスト、TypeScript型検査、Biome、プロダクションビルドを実行します。
+`npm run check`はmanifestパーサー、MP4事前検査、アップロード可否契約、UI、FFmpeg前処理のテスト、TypeScript/Python型検査、Biome/Ruff、プロダクションビルドを実行します。
 `cf:dry-run`はCloudflare Workers Static Assetsのバンドルだけを検証し、デプロイはしません。
+`analyzer:container-smoke`は非root・networkなし・read-only root filesystemでimageをbuildし、実MP4 fixtureからJPEGと`result.json`を生成します。
 
 ## 構成
 
@@ -76,5 +83,6 @@ packages/teslacam-parser/   TeslaCamパス、イベント、カメラ整理
 packages/video-preflight/   MP4ヘッダーの分割読込と事前判定
 packages/upload-contract/   ローカルのアップロード可否契約v1
 packages/upload-session/    開発用ジョブ・署名トークン・SHA-256
+containers/analyzer/        Python + FFmpegの1イベント前処理CLI/Container
 docs/                        プロダクト判断と原計画
 ```
