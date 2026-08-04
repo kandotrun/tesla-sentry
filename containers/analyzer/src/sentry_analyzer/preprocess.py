@@ -333,14 +333,17 @@ def _resolve_inputs(
 ) -> tuple[Path, dict[str, Path | None]]:
     try:
         resolved_root = input_root.resolve(strict=True)
-    except OSError as error:
+    except (OSError, RuntimeError) as error:
         raise ContractError("input root does not exist") from error
     if not resolved_root.is_dir():
         raise ContractError("input root must be a directory")
 
     resolved: dict[str, Path | None] = {}
     for item in request.clips:
-        candidate = (resolved_root / PurePosixPath(item.relative_path)).resolve(strict=False)
+        try:
+            candidate = (resolved_root / PurePosixPath(item.relative_path)).resolve(strict=False)
+        except (OSError, RuntimeError) as error:
+            raise ContractError("clip path cannot be resolved") from error
         try:
             candidate.relative_to(resolved_root)
         except ValueError as error:

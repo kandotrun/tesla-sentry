@@ -309,6 +309,25 @@ class PreprocessEventTests(unittest.TestCase):
             self.assertEqual(media.extractions, [])
             self.assertFalse((root / "output").exists())
 
+    def test_rejects_a_symlink_loop_before_media_execution(self) -> None:
+        request = EventPreprocessRequest(
+            event_id="event-001",
+            clips=(clip("front-001", "front", "2030-01-01T12:00:00", "loop.mp4"),),
+        )
+        media = FakeMediaTool({})
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            input_root = root / "input"
+            input_root.mkdir()
+            (input_root / "loop.mp4").symlink_to("loop.mp4")
+
+            with self.assertRaisesRegex(ContractError, "clip path"):
+                preprocess_event(request, input_root, root / "output", media)
+
+            self.assertEqual(media.extractions, [])
+            self.assertFalse((root / "output").exists())
+
     def test_rejects_a_nonempty_output_root_without_deleting_existing_files(self) -> None:
         request = EventPreprocessRequest(
             event_id="event-001",
