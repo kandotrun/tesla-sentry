@@ -32,9 +32,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends ffmpeg python3-venv
-          python3 -m venv .venv-analyzer
-          .venv-analyzer/bin/python -m pip install --disable-pip-version-check -r containers/analyzer/requirements-dev.txt
-          echo "$PWD/.venv-analyzer/bin" >> "$GITHUB_PATH"
+          python3 -m venv "$RUNNER_TEMP/tesla-sentry-analyzer-venv"
+          "$RUNNER_TEMP/tesla-sentry-analyzer-venv/bin/python" -m pip install \
+            --disable-pip-version-check \
+            -r containers/analyzer/requirements-dev.txt
+          echo "$RUNNER_TEMP/tesla-sentry-analyzer-venv/bin" >> "$GITHUB_PATH"
 
       - name: Install dependencies
         run: npm ci
