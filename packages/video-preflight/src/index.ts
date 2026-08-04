@@ -35,6 +35,11 @@ export interface VideoPreflightOptions {
   readonly signal?: AbortSignal;
 }
 
+export interface PreflightRangeReader {
+  readonly size: number;
+  read(offset: number, length: number): Promise<Uint8Array<ArrayBuffer>>;
+}
+
 interface BoxHeader {
   readonly contentStart: number;
   readonly end: number;
@@ -130,8 +135,8 @@ function safeUint64(view: DataView, offset: number): number | null {
   return value <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(value) : null;
 }
 
-class BlobRangeReader {
-  readonly blob: Blob;
+class MetadataReader {
+  readonly base: PreflightRangeReader;
   readonly chunkBytes: number;
   readonly maxBytes: number;
   readonly signal: AbortSignal | undefined;
@@ -139,14 +144,19 @@ class BlobRangeReader {
   private cache = new Uint8Array(new ArrayBuffer(0));
   private cacheStart = 0;
 
-  constructor(blob: Blob, chunkBytes: number, maxBytes: number, signal?: AbortSignal) {
-    this.blob = blob;
+  constructor(
+    base: PreflightRangeReader,
+    chunkBytes: number,
+    maxBytes: number,
+    signal?: AbortSignal,
+  ) {
+    this.base = base;
     this.chunkBytes = chunkBytes;
     this.maxBytes = maxBytes;
     this.signal = signal;
   }
 
-  async read(offset: number, length: number): Promise<Uint8Array> {
+  async read(offset: number, length: number): Promise<Uint8Array<ArrayBuffer>> {
     this.signal?.throwIfAborted();
     if (
       !Number.isSafeInteger(offset) ||
@@ -157,7 +167,7 @@ class BlobRangeReader {
       throw new InvalidContainerError("Invalid byte range");
     }
     const requestedEnd = offset + length;
-    if (!Number.isSafeInteger(requestedEnd) || requestedEnd > this.blob.size) {
+    if (!Number.isSafeInteger(requestedEnd) || requestedEnd > this.base.size) {
       throw new InvalidContainerError("Box data exceeds the file boundary");
     }
 
@@ -170,20 +180,37 @@ class BlobRangeReader {
     if (remainingBudget < length) {
       throw new MetadataBudgetError("Metadata read budget exhausted");
     }
-    const readLength = Math.min(this.chunkBytes, remainingBudget, this.blob.size - offset);
+    const readLength = Math.min(this.chunkBytes, remainingBudget, this.base.size - offset);
     if (readLength < length) {
       throw new MetadataBudgetError("Metadata field does not fit within the read budget");
     }
 
-    const buffer = await this.blob.slice(offset, offset + readLength).arrayBuffer();
+    const chunk = await this.base.read(offset, readLength);
     this.signal?.throwIfAborted();
-    this.scannedBytes += buffer.byteLength;
-    this.cache = new Uint8Array(buffer);
+    this.scannedBytes += chunk.byteLength;
+    this.cache = chunk;
     this.cacheStart = offset;
     if (this.cache.byteLength < length) {
       throw new InvalidContainerError("Truncated MP4 data");
     }
     return this.cache.subarray(0, length);
+  }
+}
+
+class BlobRangeReader implements PreflightRangeReader {
+  readonly blob: Blob;
+
+  constructor(blob: Blob) {
+    this.blob = blob;
+  }
+
+  get size(): number {
+    return this.blob.size;
+  }
+
+  async read(offset: number, length: number): Promise<Uint8Array<ArrayBuffer>> {
+    const buffer = await this.blob.slice(offset, offset + length).arrayBuffer();
+    return new Uint8Array(buffer);
   }
 }
 
@@ -202,7 +229,7 @@ class BoxTraversal {
 }
 
 async function readBoxHeader(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   start: number,
   parentEnd: number,
@@ -236,7 +263,7 @@ async function readBoxHeader(
     if (depth !== 0) {
       throw new InvalidContainerError("A nested MP4 box cannot extend to end-of-file");
     }
-    size = reader.blob.size - start;
+    size = reader.base.size - start;
   } else {
     size = size32;
   }
@@ -255,7 +282,7 @@ async function readBoxHeader(
 type BoxVisitor = (box: BoxHeader, depth: number) => Promise<void>;
 
 async function visitChildren(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   parent: BoxHeader,
   depth: number,
@@ -272,7 +299,7 @@ async function visitChildren(
   }
 }
 
-async function parseTiming(reader: BlobRangeReader, box: BoxHeader): Promise<Timing> {
+async function parseTiming(reader: MetadataReader, box: BoxHeader): Promise<Timing> {
   const payloadBytes = box.end - box.contentStart;
   if (payloadBytes < 20) {
     throw new InvalidContainerError("Timing box is truncated");
@@ -295,7 +322,7 @@ async function parseTiming(reader: BlobRangeReader, box: BoxHeader): Promise<Tim
   throw new InvalidContainerError("Unsupported timing box version");
 }
 
-async function parseDimensions(reader: BlobRangeReader, box: BoxHeader): Promise<Dimensions> {
+async function parseDimensions(reader: MetadataReader, box: BoxHeader): Promise<Dimensions> {
   const payloadBytes = box.end - box.contentStart;
   if (payloadBytes < 1) {
     throw new InvalidContainerError("Track header is truncated");
@@ -314,7 +341,7 @@ async function parseDimensions(reader: BlobRangeReader, box: BoxHeader): Promise
   };
 }
 
-async function parseHandler(reader: BlobRangeReader, box: BoxHeader): Promise<string> {
+async function parseHandler(reader: MetadataReader, box: BoxHeader): Promise<string> {
   if (box.end - box.contentStart < 12) {
     throw new InvalidContainerError("Handler box is truncated");
   }
@@ -332,7 +359,7 @@ function requiredCodecConfiguration(sampleType: string): string | null {
 }
 
 async function validateVideoSampleEntry(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   entry: BoxHeader,
   sampleType: string,
@@ -358,7 +385,7 @@ async function validateVideoSampleEntry(
 }
 
 async function parseSampleDescriptions(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   box: BoxHeader,
   depth: number,
@@ -405,7 +432,7 @@ async function parseSampleDescriptions(
 }
 
 async function parseSampleTable(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   box: BoxHeader,
   depth: number,
@@ -420,7 +447,7 @@ async function parseSampleTable(
 }
 
 async function parseMediaInformation(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   box: BoxHeader,
   depth: number,
@@ -435,7 +462,7 @@ async function parseMediaInformation(
 }
 
 async function parseMedia(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   box: BoxHeader,
   depth: number,
@@ -466,7 +493,7 @@ async function parseMedia(
 }
 
 async function parseTrack(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   box: BoxHeader,
   depth: number,
@@ -492,7 +519,7 @@ function durationSeconds(trackTiming: Timing | null, movieTiming: Timing | null)
 }
 
 async function parseMovie(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
   moov: BoxHeader,
 ): Promise<VideoMetadata> {
@@ -526,12 +553,12 @@ async function parseMovie(
 }
 
 async function locateAndParseMovie(
-  reader: BlobRangeReader,
+  reader: MetadataReader,
   traversal: BoxTraversal,
 ): Promise<VideoMetadata | null> {
   let offset = 0;
-  while (offset < reader.blob.size) {
-    const box = await readBoxHeader(reader, traversal, offset, reader.blob.size, 0);
+  while (offset < reader.base.size) {
+    const box = await readBoxHeader(reader, traversal, offset, reader.base.size, 0);
     if (box.type === "moov") {
       return parseMovie(reader, traversal, box);
     }
@@ -543,13 +570,16 @@ async function locateAndParseMovie(
   return null;
 }
 
-export async function preflightMp4(
-  blob: Blob,
+export async function preflightRangeReader(
+  base: PreflightRangeReader,
   options: VideoPreflightOptions = {},
 ): Promise<VideoPreflightResult> {
   const { signal } = options;
   signal?.throwIfAborted();
-  if (blob.size === 0) {
+  if (!Number.isFinite(base.size) || base.size < 0 || !Number.isSafeInteger(base.size)) {
+    throw new InvalidContainerError("Reader size is invalid");
+  }
+  if (base.size === 0) {
     return emptyResult("empty_file", 0);
   }
 
@@ -561,7 +591,7 @@ export async function preflightMp4(
     positiveInteger(options.maxMetadataBytes, MAX_METADATA_BYTES),
     MAX_METADATA_BYTES,
   );
-  const reader = new BlobRangeReader(blob, chunkBytes, maxMetadataBytes, signal);
+  const reader = new MetadataReader(base, chunkBytes, maxMetadataBytes, signal);
 
   try {
     const metadata = await locateAndParseMovie(reader, new BoxTraversal());
@@ -577,4 +607,11 @@ export async function preflightMp4(
     }
     return emptyResult("invalid_container", reader.scannedBytes);
   }
+}
+
+export async function preflightMp4(
+  blob: Blob,
+  options: VideoPreflightOptions = {},
+): Promise<VideoPreflightResult> {
+  return preflightRangeReader(new BlobRangeReader(blob), options);
 }

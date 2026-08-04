@@ -121,7 +121,8 @@ export function PreflightPanel({
       </div>
       <p className="preflight-panel__note">
         MP4の時間・コーデック・解像度・暗号化/破損候補をブラウザ内で確認しています。
-        動画も結果もサーバーへ送信しません。
+        この事前検査中は、動画も結果もサーバーへ送信しません。
+        送信はアップロードボタンを明示的に押した後だけ始まります。
       </p>
       <div className="preflight-panel__counts preflight-panel__counts--plan">
         <strong>次段階候補 {plan.totals.eligibleClips}本</strong>
@@ -133,7 +134,7 @@ export function PreflightPanel({
         </span>
       </div>
       <p className="preflight-panel__note preflight-panel__note--plan">
-        候補判定のみで、アップロードはまだ開始しません。
+        候補判定だけではアップロードを開始しません。送信には上の明示操作が必要です。
       </p>
       {summary ? <p className="preflight-panel__summary">{summary}</p> : null}
       {complete && reviewRecords.length > 0 ? (

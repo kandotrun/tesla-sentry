@@ -13,6 +13,7 @@
   "dependencies": {
     "@sentry-check/teslacam-parser": "*",
     "@sentry-check/upload-contract": "*",
+    "@sentry-check/upload-session": "*",
     "@sentry-check/video-preflight": "*",
     "react": "19.2.8",
     "react-dom": "19.2.8"

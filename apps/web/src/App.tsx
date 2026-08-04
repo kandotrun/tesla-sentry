@@ -8,6 +8,9 @@ import { buildUploadPlanV1, type UploadPlanV1 } from "@sentry-check/upload-contr
 import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
 import { PreflightPanel } from "./PreflightPanel";
 import "./styles.css";
+import { DevUploadPanel } from "./upload/DevUploadPanel";
+import { createDevApiClient } from "./upload/dev-upload-client";
+import { fileStreamSource, hashStreamSource } from "./upload/sha256";
 import {
   type ClipFileInput,
   type ClipPreflightProbe,
@@ -85,7 +88,9 @@ function ManifestPanel({
   manifest,
   plan,
   preflight,
+  filesByFingerprint,
 }: {
+  readonly filesByFingerprint: ReadonlyMap<string, File>;
   readonly manifest: TeslaCamManifest;
   readonly plan: UploadPlanV1;
   readonly preflight: ClipPreflightState | null;
@@ -137,7 +142,7 @@ function ManifestPanel({
           <p className="eyebrow eyebrow--green">LOCAL MANIFEST / PREFLIGHT</p>
           <h2>アップロード前の確認</h2>
         </div>
-        <p className="manifest__status">まだ外部送信されていません</p>
+        <p className="manifest__status">送信は明示操作後のみ</p>
       </div>
 
       <dl className="metrics">
@@ -156,6 +161,15 @@ function ManifestPanel({
       </dl>
 
       {preflight ? <PreflightPanel plan={plan} state={preflight} /> : null}
+
+      {preflight && preflight.completed === preflight.total ? (
+        <DevUploadPanel
+          apiClient={createDevApiClient()}
+          filesByFingerprint={filesByFingerprint}
+          hashFile={(file) => hashStreamSource(fileStreamSource(file))}
+          plan={plan}
+        />
+      ) : null}
 
       <div className="scope-strip">
         <span className="scope-strip__active">SentryClipsを対象</span>
@@ -195,7 +209,7 @@ function ManifestPanel({
       <footer className="manifest__footer">
         <p>
           MP4事前検査を通過した動画だけを、次段階のアップロード候補にします。
-          現時点ではアップロード・解析・課金は始まりません。
+          候補判定だけではアップロード・解析・課金を開始しません。
         </p>
       </footer>
     </section>
@@ -211,6 +225,9 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
   const [manifest, setManifest] = useState<TeslaCamManifest | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [preflight, setPreflight] = useState<ClipPreflightState | null>(null);
+  const [filesByFingerprint, setFilesByFingerprint] = useState<ReadonlyMap<string, File>>(
+    new Map(),
+  );
   const activeScan = useRef<AbortController | null>(null);
   const scanVersion = useRef(0);
 
@@ -261,6 +278,7 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
       return;
     }
 
+    setFilesByFingerprint(filesByFingerprint);
     setPreflight({ completed: 0, records: [], total: clipFiles.length });
     void preflightClipFiles(clipFiles, probeVideoFile, controller.signal, (record) => {
       if (controller.signal.aborted || currentVersion !== scanVersion.current) {
@@ -292,7 +310,7 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
           <span className="wordmark__slash">/</span>
           <span>CHECK</span>
         </a>
-        <span className="build-label">ローカル事前検査版 · 動画送信なし</span>
+        <span className="build-label">ローカル事前検査 · 明示操作後のみ送信</span>
       </header>
 
       <section className="hero" id="top">
@@ -335,10 +353,10 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
             <span>TeslaCam/</span>
             <span>└─ SentryClips/</span>
           </div>
-          <h2>フォルダを選択しても、動画本体は送信されません</h2>
+          <h2>フォルダ選択と事前検査だけでは、動画は送信されません</h2>
           <p>
             ファイル名・相対パス・容量と、必要なMP4メタデータをこのブラウザ内だけで読み取ります。
-            動画もメタデータもサーバーへ送信しません。
+            検査後にアップロードボタンを明示的に押した場合だけ、対象動画を送信します。
           </p>
           <ul>
             <li>Teslaアカウント連携なし</li>
@@ -349,7 +367,12 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
       </section>
 
       {manifest && uploadPlan ? (
-        <ManifestPanel manifest={manifest} plan={uploadPlan} preflight={preflight} />
+        <ManifestPanel
+          filesByFingerprint={filesByFingerprint}
+          manifest={manifest}
+          plan={uploadPlan}
+          preflight={preflight}
+        />
       ) : (
         <section className="waiting-grid" aria-label="処理ステップ">
           <article>
