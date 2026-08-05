@@ -136,7 +136,7 @@ Webの`App`は任意の`analysisVerdict`を`ContactVerdictPanel`へ渡せる。�
 - 8 fps、160×104 grayscaleで画素差とgradient変化をstream解析する`camera-temporal-activity-v1`
 - 4 transition以内にscore 0.70以上が2回続いた場合だけ`activity_detected`にする持続条件
 - 方向別11 key、6方向aggregate 6 keyのPython/TypeScript固定Schemaとcross-language fixture
-- 6入力の欠落、重複、順序違い、path traversal、symlink、identity差し替えを拒否するread-only CLI
+- 6入力の欠落、重複ID・path・実ファイルidentity、順序違い、path traversal、symlink、解析中のmetadata・identity変更を拒否するread-only CLI
 - activityを`possible_contact`へ限定し、直接repeater幾何の`contact`を常に優先するadditive classifier
 - 解析欠落を`camera_activity_analysis_unavailable`へ閉じる判定と、接触確定ではない日本語表示
 

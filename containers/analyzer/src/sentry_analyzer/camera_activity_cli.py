@@ -115,6 +115,10 @@ def parse_request(payload: JsonValue) -> CameraActivityRequest:
         cameras.append(
             CameraActivityInput(camera, clip_id, _relative_path(item.get("relativePath")))
         )
+    if len({item.clip_id for item in cameras}) != len(cameras):
+        raise ContractError("clipId")
+    if len({item.relative_path for item in cameras}) != len(cameras):
+        raise ContractError("relativePath")
     return CameraActivityRequest(event_id, tuple(cameras))
 
 
@@ -153,6 +157,8 @@ def execute_request(
                 stack.enter_context(open_input(input_root, item.relative_path))
                 for item in request.cameras
             )
+            if len({handle.identity.object_key() for handle in handles}) != len(handles):
+                raise ContractError("cameras")
             output_handle = stack.enter_context(open_output(output_root))
         except OSError as error:
             raise ContractError("path") from error

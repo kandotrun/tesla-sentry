@@ -17,7 +17,7 @@ Model Y 2025+ Long RangeのTeslaCam 6方向について、カメラ近傍で接�
 5. `left_pillar`
 6. `right_pillar`
 
-重複、欠落、順序違い、未知方向、絶対path、`..`、symlink、解析中のleaf差し替えは拒否する。入力はread-onlyのfile descriptorで保持し、解析後にidentityを再検証する。
+重複clip ID、重複path、同一実ファイルへのalias、欠落、順序違い、未知方向、絶対path、`..`、symlink、解析中のleaf差し替えまたは同一inodeへの変更は拒否する。入力はread-onlyのfile descriptorで保持し、解析後にdevice、inode、size、mtime、ctimeを再検証する。
 
 フロントはH.264、display 2896x1876、coded 2896x1888、crop `(0,12,0,0)`を要求する。他5方向はH.264、display 1448x938、coded 1456x944、crop `(0,6,0,8)`を要求する。rotationは0度、durationは3秒以上90秒以下、frame rateは1以上120以下とする。SPSと先頭frameのcropが両方ある場合は一致を要求する。
 

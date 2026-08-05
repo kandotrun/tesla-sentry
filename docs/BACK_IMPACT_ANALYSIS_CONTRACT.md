@@ -73,7 +73,7 @@ issueは`analysis_failed`、`decode_failed`、`frame_timing_unreliable`、`insuf
 
 CLI requestは1 MiB以下のUTF-8 JSONで、`schemaVersion`、`clipId`、`camera`、`relativePath`の4 keyだけを持つ。`camera`は`back`、相対pathは256文字以下、各segmentは128文字以下の安全な文字集合に限定し、絶対path、空segment、`.`、`..`、backslash、非MP4を拒否する。
 
-入力は`O_NOFOLLOW`で開き、解析前後にdescriptorとpathのdevice/inode identityを照合する。出力directoryは空でなければならない。`result.tmp.json`をmode 0600で排他的に作成、fsync後に`result.json`へhard linkして一時名を削除し、既存結果を置換しない。
+入力は`O_NOFOLLOW`で開き、解析前後にdescriptorとpathのdevice、inode、size、mtime、ctimeを照合する。出力directoryは空でなければならない。`result.tmp.json`をmode 0600で排他的に作成、fsync後に`result.json`へhard linkして一時名を削除し、既存結果を置換しない。
 
 stdoutは`status`、`analyzedFrames`、`issues`件数だけのsummaryである。stderrは固定された一般errorだけを返し、入力pathやprocess詳細を含めない。exit codeは成功判定が0、request不正が2、理由付き`indeterminate`が3、処理境界の失敗が5である。
 

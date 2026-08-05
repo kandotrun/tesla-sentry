@@ -20,10 +20,22 @@ FINAL_NAME: Final = "result.json"
 class FileIdentity:
     device: int
     inode: int
+    size: int
+    modified_ns: int
+    changed_ns: int
 
     @classmethod
     def from_stat(cls, metadata: os.stat_result) -> FileIdentity:
-        return cls(metadata.st_dev, metadata.st_ino)
+        return cls(
+            metadata.st_dev,
+            metadata.st_ino,
+            metadata.st_size,
+            metadata.st_mtime_ns,
+            metadata.st_ctime_ns,
+        )
+
+    def object_key(self) -> tuple[int, int]:
+        return (self.device, self.inode)
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +77,8 @@ class OutputHandle:
         path_identity = FileIdentity.from_stat(
             os.stat(self.leaf_name, dir_fd=self.parent_descriptor, follow_symlinks=False)
         )
-        if directory_identity != self.identity or path_identity != self.identity:
+        expected = self.identity.object_key()
+        if directory_identity.object_key() != expected or path_identity.object_key() != expected:
             raise OSError("output changed during analysis")
 
     def write(self, payload: bytes) -> None:

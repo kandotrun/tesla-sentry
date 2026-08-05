@@ -140,6 +140,24 @@ class BackImpactCliTests(unittest.TestCase):
             )
             self.assertFalse((output_root / "result.json").exists())
 
+    def test_in_place_input_mutation_fails_closed_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+
+            def mutate(_: InputHandle) -> None:
+                (input_root / "back.mp4").write_bytes(b"mutated-media")
+
+            with self.assertRaises(OSError):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames(), mutate),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
+
     def test_output_swap_fails_closed_without_touching_replacement(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

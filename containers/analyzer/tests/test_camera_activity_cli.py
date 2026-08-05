@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import stat
 import tempfile
 import unittest
@@ -105,7 +106,35 @@ class CameraActivityCliTests(unittest.TestCase):
         first = clone_mapping(cameras[0])
         first["relativePath"] = "../private.mp4"
         unsafe["cameras"] = [first, *cameras[1:]]
-        invalid: tuple[JsonValue, ...] = (missing, reordered, duplicate, extra, unsafe)
+        duplicate_clip_id = clone_mapping(valid)
+        duplicate_clip_id_cameras = duplicate_clip_id["cameras"]
+        assert isinstance(duplicate_clip_id_cameras, list)
+        duplicate_clip_id_second = clone_mapping(duplicate_clip_id_cameras[1])
+        duplicate_clip_id_second["clipId"] = "front-001"
+        duplicate_clip_id["cameras"] = [
+            duplicate_clip_id_cameras[0],
+            duplicate_clip_id_second,
+            *duplicate_clip_id_cameras[2:],
+        ]
+        duplicate_path = clone_mapping(valid)
+        duplicate_path_cameras = duplicate_path["cameras"]
+        assert isinstance(duplicate_path_cameras, list)
+        duplicate_path_second = clone_mapping(duplicate_path_cameras[1])
+        duplicate_path_second["relativePath"] = "event/front.mp4"
+        duplicate_path["cameras"] = [
+            duplicate_path_cameras[0],
+            duplicate_path_second,
+            *duplicate_path_cameras[2:],
+        ]
+        invalid: tuple[JsonValue, ...] = (
+            missing,
+            reordered,
+            duplicate,
+            extra,
+            unsafe,
+            duplicate_clip_id,
+            duplicate_path,
+        )
         for payload in invalid:
             with self.subTest(payload=payload), self.assertRaises(ContractError):
                 parse_request(payload)
@@ -133,6 +162,29 @@ class CameraActivityCliTests(unittest.TestCase):
             stored = json.loads((output_root / "result.json").read_text())
             self.assertEqual(stored, result.to_dict())
             self.assertEqual(stat.S_IMODE((output_root / "result.json").stat().st_mode), 0o600)
+
+    def test_execute_rejects_distinct_paths_to_the_same_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root = root / "input"
+            for camera in CAMERA_ACTIVITY_ORDER:
+                path = input_root / "event" / f"{camera}.mp4"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"media")
+            alias = input_root / "event/left_repeater.mp4"
+            alias.unlink()
+            os.link(input_root / "event/back.mp4", alias)
+            output_root = root / "output"
+
+            with self.assertRaises(ContractError):
+                execute_request(
+                    parse_request(request_payload()),
+                    input_root,
+                    output_root,
+                    lambda camera: FakeMedia(camera),
+                )
+
+            self.assertFalse(output_root.exists())
 
     def test_one_media_failure_makes_aggregate_indeterminate_without_activity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
