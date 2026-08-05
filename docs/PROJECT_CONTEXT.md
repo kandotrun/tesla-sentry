@@ -128,6 +128,24 @@ Webの`App`は任意の`analysisVerdict`を`ContactVerdictPanel`へ渡せる。�
 
 `possible_contact`は時間変化signalであり、接触、損傷、接触部位、物理距離を確定しない。`no_impact_signal_observed`も非接触または無損傷を保証しない。詳細は[back時系列解析契約](BACK_IMPACT_ANALYSIS_CONTRACT.md)と[実在庫レポート](BACK_IMPACT_REAL_DATA_REPORT.md)へ記録する。
 
+### 6方向カメラ時間変化の縦切り
+
+ユーザー確認済みの実接触窓を基準に、Model Yの固定された6方向camera roleを保った時間変化producerを追加した。
+
+- front専用と他5方向用のH.264 display/coded/crop固定profile
+- 8 fps、160×104 grayscaleで画素差とgradient変化をstream解析する`camera-temporal-activity-v1`
+- 4 transition以内にscore 0.70以上が2回続いた場合だけ`activity_detected`にする持続条件
+- 方向別11 key、6方向aggregate 6 keyのPython/TypeScript固定Schemaとcross-language fixture
+- 6入力の欠落、重複、順序違い、path traversal、symlink、identity差し替えを拒否するread-only CLI
+- activityを`possible_contact`へ限定し、直接repeater幾何の`contact`を常に優先するadditive classifier
+- 解析欠落を`camera_activity_analysis_unavailable`へ閉じる判定と、接触確定ではない日本語表示
+
+確認済み接触窓1/1件は検出し、比較窓7/7件は検出しなかった。同時刻の6方向窓ではbackだけが持続条件を満たした。これは1正例と7比較例による閾値校正で、独立blind holdoutを持たないためaccuracy、precision、recallではない。
+
+全長の同一実イベント6本を新CLIへ直接渡したread-only確認では6/6を解析し、aggregateは`activity_detected`、方向別では2/6がactivity、0/6がindeterminateだった。全長clipの接触窓以外には正解ラベルがないため、追加のactivityを誤検知とは扱わない。元映像6/6のsize、mtime、modeは不変だった。
+
+詳細は[6方向時間変化解析契約](CAMERA_TEMPORAL_ACTIVITY_CONTRACT.md)と[実データ校正レポート](CAMERA_TEMPORAL_ACTIVITY_REAL_DATA_REPORT.md)に記録する。
+
 物体検出、セグメンテーション、追跡、カメラ間の候補関連付け、raw-videoアンカー抽出、物理距離の復元、本番用backend orchestrationは未実装である。
 
 詳細な実測根拠と利用境界は[Model Yカメラ幾何V2の実装メモ](CAMERA_GEOMETRY_NOTES.md)に記録する。

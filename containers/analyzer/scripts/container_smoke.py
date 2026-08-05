@@ -44,12 +44,38 @@ assert '/input' not in serialized
 assert 'back.mp4' not in serialized
 print(json.dumps({'status': result['status'], 'analyzedFrames': 32, 'issues': 0}))
 """
+CAMERA_OUTPUT_VALIDATION_CODE = """
+import json
+import stat
+from pathlib import Path
+
+result_path = Path('/output/result.json')
+assert stat.S_IMODE(result_path.stat().st_mode) == 0o600
+result = json.loads(result_path.read_text(encoding='utf-8'))
+assert result['status'] == 'activity_detected'
+assert len(result['cameras']) == 6
+assert [item['camera'] for item in result['cameras']] == [
+    'front', 'back', 'left_repeater', 'right_repeater', 'left_pillar', 'right_pillar'
+]
+assert [item['status'] for item in result['cameras']].count('activity_detected') == 1
+serialized = json.dumps(result)
+assert '/input' not in serialized
+assert '.mp4' not in serialized
+print(json.dumps({'status': result['status'], 'cameras': 6, 'activity': 1, 'indeterminate': 0}))
+"""
 
 
 class BackSummary(TypedDict):
     status: str
     analyzedFrames: int
     issues: int
+
+
+class CameraSummary(TypedDict):
+    status: str
+    cameras: int
+    activity: int
+    indeterminate: int
 
 
 JsonValue: TypeAlias = bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"] | None
@@ -106,6 +132,60 @@ def _make_back_fixture(root: Path) -> None:
         ],
         check=True,
     )
+
+
+def _write_activity_frames(root: Path, changing: bool) -> Path:
+    frames = root / ("camera-changing-frames" if changing else "camera-static-frames")
+    frames.mkdir()
+    for index in range(32):
+        variant = 1 if changing and index == 12 else 2 if changing and index == 13 else 0
+        pixels = bytes(
+            (x * (17 + variant * 13) + y * (31 + variant * 7) + variant * 97) % 256
+            for y in range(104)
+            for x in range(160)
+        )
+        (frames / f"{index:03d}.pgm").write_bytes(b"P5\n160 104\n255\n" + pixels)
+    return frames
+
+
+def _encode_activity_fixture(frames: Path, output: Path, scale: str) -> None:
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-framerate",
+            "8",
+            "-i",
+            str(frames / "%03d.pgm"),
+            "-vf",
+            f"scale={scale}:flags=neighbor,format=yuv420p",
+            "-c:v",
+            "libx264",
+            "-profile:v",
+            "high",
+            str(output),
+        ],
+        check=True,
+    )
+
+
+def make_camera_activity_fixtures(root: Path) -> Path:
+    event_root = root / "camera-event"
+    event_root.mkdir()
+    static_frames = _write_activity_frames(root, False)
+    changing_frames = _write_activity_frames(root, True)
+    _encode_activity_fixture(static_frames, event_root / "front.mp4", "2896:1876")
+    _encode_activity_fixture(changing_frames, event_root / "back.mp4", "1448:938")
+    _encode_activity_fixture(
+        static_frames,
+        event_root / "left_repeater.mp4",
+        "1448:938",
+    )
+    for camera in ("right_repeater", "left_pillar", "right_pillar"):
+        shutil.copyfile(event_root / "left_repeater.mp4", event_root / f"{camera}.mp4")
+    return event_root
 
 
 def _remove_container_owned_outputs(repository_root: Path, output_root: Path) -> None:
@@ -208,6 +288,49 @@ def _validate_back_outputs(repository_root: Path, output_root: Path) -> BackSumm
         raise RuntimeError("back impact container output validation failed")
     payload: JsonValue = json.loads(completed.stdout)
     return parse_back_summary(payload)
+
+
+def _validate_camera_outputs(repository_root: Path, output_root: Path) -> CameraSummary:
+    completed = subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "--read-only",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            "--mount",
+            f"type=bind,src={output_root},dst=/output,readonly",
+            "--entrypoint",
+            "python",
+            IMAGE_TAG,
+            "-c",
+            CAMERA_OUTPUT_VALIDATION_CODE,
+        ],
+        cwd=repository_root,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError("camera activity container output validation failed")
+    payload: JsonValue = json.loads(completed.stdout)
+    if not isinstance(payload, dict):
+        raise RuntimeError("camera activity container returned an invalid summary")
+    expected: CameraSummary = {
+        "status": "activity_detected",
+        "cameras": 6,
+        "activity": 1,
+        "indeterminate": 0,
+    }
+    if payload != expected:
+        raise RuntimeError("camera activity container returned an invalid summary")
+    return expected
 
 
 def main() -> None:
@@ -369,6 +492,83 @@ def main() -> None:
         if str(root) in back_completed.stdout or "back.mp4" in back_completed.stdout:
             raise RuntimeError("back impact container disclosed source details")
 
+        _remove_container_owned_outputs(repository_root, output_root)
+        event_root = make_camera_activity_fixtures(input_root)
+        camera_request_path = root / "camera-request.json"
+        camera_request_path.write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "eventId": "camera-container-fixture",
+                    "cameras": [
+                        {
+                            "camera": camera,
+                            "clipId": f"{camera}-fixture",
+                            "relativePath": f"camera-event/{camera}.mp4",
+                        }
+                        for camera in (
+                            "front",
+                            "back",
+                            "left_repeater",
+                            "right_repeater",
+                            "left_pillar",
+                            "right_pillar",
+                        )
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        camera_completed = subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--network",
+                "none",
+                "--read-only",
+                "--tmpfs",
+                "/tmp:rw,noexec,nosuid,size=64m",
+                "--cap-drop",
+                "ALL",
+                "--security-opt",
+                "no-new-privileges",
+                "--memory",
+                "1g",
+                "--cpus",
+                "2",
+                "--pids-limit",
+                "128",
+                "--mount",
+                f"type=bind,src={camera_request_path},dst=/request.json,readonly",
+                "--mount",
+                f"type=bind,src={input_root},dst=/input,readonly",
+                "--mount",
+                f"type=bind,src={output_root},dst=/output",
+                "--entrypoint",
+                "python",
+                IMAGE_TAG,
+                "-m",
+                "sentry_analyzer.camera_activity_cli",
+                "--request",
+                "/request.json",
+                "--input-root",
+                "/input",
+                "--output-root",
+                "/output",
+            ],
+            cwd=repository_root,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=180,
+        )
+        if camera_completed.returncode != 0 or camera_completed.stderr:
+            raise RuntimeError("camera activity container smoke command failed")
+        camera_result = _validate_camera_outputs(repository_root, output_root)
+        if str(root) in camera_completed.stdout or str(event_root) in camera_completed.stdout:
+            raise RuntimeError("camera activity container disclosed source details")
+
         print(
             json.dumps(
                 {
@@ -376,6 +576,7 @@ def main() -> None:
                     "processedClips": result["processedClips"],
                     "issues": result["issues"],
                     "backImpact": back_result["status"],
+                    "cameraActivity": camera_result["status"],
                 }
             )
         )

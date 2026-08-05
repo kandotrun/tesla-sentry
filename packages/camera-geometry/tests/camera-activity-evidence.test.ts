@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   type CameraActivityCamera,
@@ -59,6 +60,14 @@ function event(status = "no_activity_signal_observed") {
 }
 
 describe("parseCameraActivityEvidence", () => {
+  it("accepts the exact Python cross-language fixture", () => {
+    const fixture = JSON.parse(
+      readFileSync(new URL("./fixtures/camera-temporal-activity-v1.json", import.meta.url), "utf8"),
+    );
+
+    expect(parseCameraActivityEvidence(fixture)).toEqual(fixture);
+  });
+
   it.each(["activity_detected", "no_activity_signal_observed", "indeterminate"])(
     "accepts a strict %s direction result",
     (status) => {

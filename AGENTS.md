@@ -17,11 +17,11 @@
 
 Model Y向けの純粋な型付きカメラ幾何V2は、左右repeaterの2方向直接幾何と4方向の文脈役割を含めて実装済みである。
 
-この契約へ実動画を直接渡すことはできず、型付き証拠を作るraw-video producerは未実装である。
+6方向のraw-videoから固定media profileを再検証し、カメラ近傍の短時間変化を型付き証拠へするproducerとread-only CLIは実装済みである。これは接触を確定せず、6方向の物体候補を追跡または関連付けるproducerではない。
 
 1. raw-videoから左右repeaterの固定アンカー観測可否と正規化誤差を生成し、6方向の録画descriptorを作る
 2. 候補物体の検出、セグメンテーション、追跡、4方向の文脈関連付け、構造化カバレッジを作る
-3. 型付きカメラ幾何V2へproducer出力を接続し、固定Schemaの判定結果を表示する
+3. 幾何producer出力と時間変化producer出力を本番orchestrationへ接続し、固定Schemaの判定結果を自動表示する
 4. 本番向けmultipart、中断再開、重複スキップ、削除ライフサイクル
 5. 認証、課金、β運用
 
