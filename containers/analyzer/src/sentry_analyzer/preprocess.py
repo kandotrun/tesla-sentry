@@ -340,8 +340,14 @@ def _resolve_inputs(
 
     resolved: dict[str, Path | None] = {}
     for item in request.clips:
+        unresolved_candidate = resolved_root / PurePosixPath(item.relative_path)
         try:
-            candidate = (resolved_root / PurePosixPath(item.relative_path)).resolve(strict=False)
+            candidate = unresolved_candidate.resolve(strict=True)
+        except FileNotFoundError:
+            try:
+                candidate = unresolved_candidate.resolve(strict=False)
+            except (OSError, RuntimeError) as error:
+                raise ContractError("clip path cannot be resolved") from error
         except (OSError, RuntimeError) as error:
             raise ContractError("clip path cannot be resolved") from error
         try:

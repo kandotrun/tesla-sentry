@@ -166,4 +166,10 @@ stdout summaryもstatus、処理clip数、issue数だけとし、`eventId`をlog
 - R2からのdownloadと結果upload orchestration
 - GPU推論
 
-次の境界は、明示された車種・年式・カメラ世代・解像度から固定camera profileを選び、方向別の車体maskと近接ROIを正規化座標で返す純粋処理とする。
+左右repeaterの2方向直接幾何と4方向の文脈役割を持つ型付きカメラ幾何V2は、前処理v1とは独立した純粋処理として実装済みである。
+
+前処理v1はraw-videoから固定アンカー、物体mask、track、文脈関連付け、構造化カバレッジを生成せず、カメラ幾何V2を呼び出さない。
+
+したがって、前処理v1の出力だけでは接触判定を実行できない。
+
+raw-video producerとpipelineの接続は、前処理v1の外側に残る未実装境界である。

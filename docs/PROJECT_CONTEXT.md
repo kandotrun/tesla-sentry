@@ -1,6 +1,6 @@
 # Project Context
 
-更新：2026-08-04 JST
+更新：2026-08-05 JST
 
 ## 目的
 
@@ -93,11 +93,52 @@ MP4事前検査はコンテナのメタデータだけを確認する。
 - 同じ約181 MB・6方向を前処理Containerへ匿名化して渡し、4,182 msで6/6 `ready`、issue 0、代表JPEG 6枚を生成
 - 実パス、撮影日時、映像、署名トークンはレポートへ保存しない
 
+### カメラ幾何判定V2
+
+Model Y向けのカメラ幾何判定V2は、独立した純粋TypeScriptパッケージとして実装した。
+
+- 6方向の録画構成とH.264のコーデックおよび実測解像度を検証する。
+- 実測済みの直接幾何は`left_repeater`と`right_repeater`だけに限定する。
+- `front`と両pillarは直接の自車境界を観測できないため`unobservable`として扱う。
+- `back`は車体候補を観測できるが固定アンカーの再現精度を検証できないため`unvalidated`として扱う。
+- 直接カメラの観測範囲と4方向の文脈状態を構造化して検証する。
+- 型付きの録画descriptorは`matchVehicleCameraProfileV2`で適合判定する。
+- 左右repeaterのフレーム幾何評価と、`possible_contact`を含むイベント単位の四値判定を公開する。
+
+`no_contact_observed`は、解決済み候補について測定済みrepeater境界上で接触所見を検出しなかったという限定結果である。
+
+この値は車両全体の非接触または無損傷を保証しない。
+
+### back時系列接触可能性の縦切り
+
+Task 1から6と実映像probe互換性修正を実装し、`back`の固定幾何を追加せずに時間変化を独立した可能性証拠へした。
+
+- Schema 1、analyzer `back-temporal-impact-v1`の固定11 fieldとruntime parser
+- `possible_contact`、`no_impact_signal_observed`、理由付き`indeterminate`のproducer結果
+- H.264、1448×938 display、1456×944 coded、canonical SPS crop、rotation、duration、fpsのfail-closed再検証
+- 8 fps、160×104 grayscaleを保存せずstream解析するPython標準ライブラリproducer
+- 入出力のsymlink、path traversal、identity、atomic mode 0600 resultを検証するread-only CLI
+- `contact`を最優先しつつ、back signalを`possible_contact`へ接続するイベント判定
+- 接触を断定しない日本語表示mapping
+- concurrency 1から4、process隔離、timeout、全MP4 metadata/identity前後照合を持つ匿名在庫verifier
+
+実在庫back/rear_view 2,135件、62,184,707,400 bytesでは、1,914件を解析判定し、`possible_contact` 0件、`no_impact_signal_observed` 1,914件、`indeterminate` 221件だった。独立した正解ラベルがないため、この結果は精度または見逃し率を示さない。
+
+Webの`App`は任意の`analysisVerdict`を`ContactVerdictPanel`へ渡せる。ただし、通常のproduction upload・解析経路がproducer結果をイベント証拠へ組み込み、このpropを自動設定するorchestrationはまだ実装していない。
+
+`possible_contact`は時間変化signalであり、接触、損傷、接触部位、物理距離を確定しない。`no_impact_signal_observed`も非接触または無損傷を保証しない。詳細は[back時系列解析契約](BACK_IMPACT_ANALYSIS_CONTRACT.md)と[実在庫レポート](BACK_IMPACT_REAL_DATA_REPORT.md)へ記録する。
+
+物体検出、セグメンテーション、追跡、カメラ間の候補関連付け、raw-videoアンカー抽出、物理距離の復元、本番用backend orchestrationは未実装である。
+
+詳細な実測根拠と利用境界は[Model Yカメラ幾何V2の実装メモ](CAMERA_GEOMETRY_NOTES.md)に記録する。
+
 ## 次の実装境界
 
-1. 車種・年式・カメラ世代・解像度で選ぶ固定カメラプロファイルを定義し、方向別の車体マスクと近接ROIを正規化座標で持つ
-2. 複数カメラの時刻差、車体揺れ、遮蔽を考慮して候補区間を抽出する
-3. `接触可能性あり`、`近接のみ`、`判定不能`を含む固定Schemaの判定結果を表示する
+純粋な型付きカメラ幾何V2は実装済みであり、次の対象はraw-videoからその入力証拠を生成して接続する未実装境界である。
+
+1. raw-videoから左右repeaterの固定アンカー観測可否と正規化誤差を生成し、6方向の録画descriptorを作る
+2. 物体検出とセグメンテーションで物体maskを作り、track、4方向の文脈関連付け、直接カメラの観測範囲から構造化カバレッジを作る
+3. raw-video producer、物体track、文脈関連付けの型付き出力を本番backendでイベント判定へ渡し、保存された固定Schemaの結果を通常UIへ接続する
 
 本番R2、認証、課金は、multipart・中断再開・重複スキップと削除ライフサイクルを設計・検証してから進める。
 
@@ -112,9 +153,11 @@ MP4事前検査はコンテナのメタデータだけを確認する。
 ## ソース優先順位
 
 1. 最新の受入条件と実装・テスト
-2. `docs/UPLOAD_ELIGIBILITY_CONTRACT.md`と`docs/EVENT_PREPROCESSING_CONTRACT.md`
-3. 本ファイル
-4. `docs/product/tesla-sentry-ai-service-plan-2026-08-03.md`
-5. PR・Issue・チャット上の古い議論
+2. `docs/UPLOAD_ELIGIBILITY_CONTRACT.md`（アップロード可否契約v1）
+3. `docs/EVENT_PREPROCESSING_CONTRACT.md`（FFmpeg前処理契約）
+4. `docs/CAMERA_GEOMETRY_NOTES.md`（カメラ幾何判定V2）
+5. 本ファイル
+6. `docs/product/tesla-sentry-ai-service-plan-2026-08-03.md`
+7. PR・Issue・チャット上の古い議論
 
 料金、Cloudflare制限、モデル仕様は変更されるため、実装時点の公式資料を再確認する。

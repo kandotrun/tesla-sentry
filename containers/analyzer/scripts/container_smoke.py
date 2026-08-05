@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import TypeAlias, TypedDict, cast
 
 IMAGE_TAG = "tesla-sentry-analyzer:ci-smoke"
 OUTPUT_VALIDATION_CODE = """
@@ -28,6 +28,84 @@ assert frame_path.read_bytes()[:2] == b'\\xff\\xd8'
 assert stat.S_IMODE(frame_path.stat().st_mode) == 0o600
 print(json.dumps({'status': 'ready', 'processedClips': 1, 'issues': 0}))
 """
+BACK_OUTPUT_VALIDATION_CODE = """
+import json
+import stat
+from pathlib import Path
+
+result_path = Path('/output/result.json')
+assert stat.S_IMODE(result_path.stat().st_mode) == 0o600
+result = json.loads(result_path.read_text(encoding='utf-8'))
+assert result['status'] == 'possible_contact'
+assert result['analyzedFrames'] == 32
+assert result['issues'] == []
+serialized = json.dumps(result)
+assert '/input' not in serialized
+assert 'back.mp4' not in serialized
+print(json.dumps({'status': result['status'], 'analyzedFrames': 32, 'issues': 0}))
+"""
+
+
+class BackSummary(TypedDict):
+    status: str
+    analyzedFrames: int
+    issues: int
+
+
+JsonValue: TypeAlias = bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"] | None
+
+
+def parse_back_summary(payload: JsonValue) -> BackSummary:
+    if not isinstance(payload, dict):
+        raise RuntimeError("back impact container returned an invalid summary")
+    if frozenset(payload) != frozenset({"status", "analyzedFrames", "issues"}):
+        raise RuntimeError("back impact container returned an invalid summary")
+    status = payload["status"]
+    analyzed_frames = payload["analyzedFrames"]
+    issues = payload["issues"]
+    if not isinstance(status, str) or status != "possible_contact":
+        raise RuntimeError("back impact container returned an invalid summary")
+    if isinstance(analyzed_frames, bool) or not isinstance(analyzed_frames, int):
+        raise RuntimeError("back impact container returned an invalid summary")
+    if analyzed_frames != 32:
+        raise RuntimeError("back impact container returned an invalid summary")
+    if isinstance(issues, bool) or not isinstance(issues, int):
+        raise RuntimeError("back impact container returned an invalid summary")
+    if issues != 0:
+        raise RuntimeError("back impact container returned an invalid summary")
+    return {"status": status, "analyzedFrames": analyzed_frames, "issues": issues}
+
+
+def _make_back_fixture(root: Path) -> None:
+    frames = root / "back-frames"
+    frames.mkdir()
+    for index in range(32):
+        shift = 3 if index in {12, 13} else 0
+        pixels = bytearray(160 * 104)
+        for y in range(104):
+            for x in range(160):
+                pixels[y * 160 + x] = (((x - shift) // 8 + y // 8) % 2) * 120 + 60
+        (frames / f"{index:03d}.pgm").write_bytes(b"P5\n160 104\n255\n" + pixels)
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-framerate",
+            "8",
+            "-i",
+            str(frames / "%03d.pgm"),
+            "-vf",
+            "scale=1448:938:flags=neighbor,format=yuv420p",
+            "-c:v",
+            "libx264",
+            "-profile:v",
+            "high",
+            str(root / "back.mp4"),
+        ],
+        check=True,
+    )
 
 
 def _remove_container_owned_outputs(repository_root: Path, output_root: Path) -> None:
@@ -97,6 +175,39 @@ def _validate_container_outputs(repository_root: Path, output_root: Path) -> dic
     if not isinstance(summary, dict):
         raise RuntimeError("analyzer container returned an invalid validation summary")
     return cast(dict[str, object], summary)
+
+
+def _validate_back_outputs(repository_root: Path, output_root: Path) -> BackSummary:
+    completed = subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "none",
+            "--read-only",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            "--mount",
+            f"type=bind,src={output_root},dst=/output,readonly",
+            "--entrypoint",
+            "python",
+            IMAGE_TAG,
+            "-c",
+            BACK_OUTPUT_VALIDATION_CODE,
+        ],
+        cwd=repository_root,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError("back impact container output validation failed")
+    payload: JsonValue = json.loads(completed.stdout)
+    return parse_back_summary(payload)
 
 
 def main() -> None:
@@ -187,12 +298,84 @@ def main() -> None:
         if result != {"status": "ready", "processedClips": 1, "issues": 0}:
             raise RuntimeError("analyzer container returned an unexpected result")
 
+        _remove_container_owned_outputs(repository_root, output_root)
+        _make_back_fixture(input_root)
+        back_request_path = root / "back-request.json"
+        back_request_path.write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "clipId": "back-container-fixture",
+                    "camera": "back",
+                    "relativePath": "back.mp4",
+                }
+            ),
+            encoding="utf-8",
+        )
+        back_completed = subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--network",
+                "none",
+                "--read-only",
+                "--tmpfs",
+                "/tmp:rw,noexec,nosuid,size=64m",
+                "--cap-drop",
+                "ALL",
+                "--security-opt",
+                "no-new-privileges",
+                "--memory",
+                "1g",
+                "--cpus",
+                "2",
+                "--pids-limit",
+                "128",
+                "--mount",
+                f"type=bind,src={back_request_path},dst=/request.json,readonly",
+                "--mount",
+                f"type=bind,src={input_root},dst=/input,readonly",
+                "--mount",
+                f"type=bind,src={output_root},dst=/output",
+                "--entrypoint",
+                "python",
+                IMAGE_TAG,
+                "-m",
+                "sentry_analyzer.back_impact_cli",
+                "--request",
+                "/request.json",
+                "--input-root",
+                "/input",
+                "--output-root",
+                "/output",
+            ],
+            cwd=repository_root,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=120,
+        )
+        if back_completed.returncode != 0 or back_completed.stderr:
+            raise RuntimeError("back impact container smoke command failed")
+        back_result = _validate_back_outputs(repository_root, output_root)
+        expected_back: BackSummary = {
+            "status": "possible_contact",
+            "analyzedFrames": 32,
+            "issues": 0,
+        }
+        if back_result != expected_back:
+            raise RuntimeError("back impact container returned an unexpected result")
+        if str(root) in back_completed.stdout or "back.mp4" in back_completed.stdout:
+            raise RuntimeError("back impact container disclosed source details")
+
         print(
             json.dumps(
                 {
                     "status": result["status"],
                     "processedClips": result["processedClips"],
                     "issues": result["issues"],
+                    "backImpact": back_result["status"],
                 }
             )
         )

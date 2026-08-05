@@ -346,6 +346,93 @@
     line-height: 1.65;
   }
 
+  .contact-verdict {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 28px;
+    padding: 28px 34px 31px;
+    border: 1px solid;
+  }
+
+  .contact-verdict::before {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    content: "";
+  }
+
+  .contact-verdict__eyebrow {
+    margin-bottom: 10px;
+    font-family: "DIN Alternate", "Arial Narrow", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+  }
+
+  .contact-verdict h2 {
+    font-size: clamp(1.2rem, 2vw, 1.65rem);
+  }
+
+  .contact-verdict__body {
+    max-width: 720px;
+    margin-top: 12px;
+    color: #d3d8d4;
+    font-size: 0.84rem;
+    line-height: 1.75;
+  }
+
+  .contact-verdict--warning {
+    background: linear-gradient(120deg, rgba(255, 199, 91, 0.13), transparent 60%), #18150f;
+    border-color: #755829;
+  }
+
+  .contact-verdict--warning::before {
+    background: #ffc75b;
+  }
+
+  .contact-verdict--warning .contact-verdict__eyebrow {
+    color: #ffc75b;
+  }
+
+  .contact-verdict--alert {
+    background: linear-gradient(120deg, rgba(255, 77, 36, 0.14), transparent 60%), #1a1210;
+    border-color: #783323;
+  }
+
+  .contact-verdict--alert::before {
+    background: var(--signal);
+  }
+
+  .contact-verdict--alert .contact-verdict__eyebrow {
+    color: #ff9b80;
+  }
+
+  .contact-verdict--neutral {
+    background: linear-gradient(120deg, rgba(184, 246, 90, 0.08), transparent 60%), #111612;
+    border-color: #465d2b;
+  }
+
+  .contact-verdict--neutral::before {
+    background: var(--green);
+  }
+
+  .contact-verdict--neutral .contact-verdict__eyebrow {
+    color: var(--green);
+  }
+
+  .contact-verdict--review {
+    background: linear-gradient(120deg, rgba(157, 172, 255, 0.12), transparent 60%), #13151d;
+    border-color: #4c547c;
+  }
+
+  .contact-verdict--review::before {
+    background: #aeb9ff;
+  }
+
+  .contact-verdict--review .contact-verdict__eyebrow {
+    color: #aeb9ff;
+  }
+
   .manifest {
     overflow: hidden;
     background: var(--panel);
@@ -745,6 +832,7 @@
     }
 
     .privacy-plate,
+    .contact-verdict,
     .manifest__header,
     .metric,
     .scope-strip,
