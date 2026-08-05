@@ -73,9 +73,9 @@ issueは`analysis_failed`、`decode_failed`、`frame_timing_unreliable`、`insuf
 
 CLI requestは1 MiB以下のUTF-8 JSONで、`schemaVersion`、`clipId`、`camera`、`relativePath`の4 keyだけを持つ。`camera`は`back`、相対pathは256文字以下、各segmentは128文字以下の安全な文字集合に限定し、絶対path、空segment、`.`、`..`、backslash、非MP4を拒否する。
 
-入力は`O_NOFOLLOW`で開き、解析前後と結果公開の直前・直後にdescriptorとpathのdevice、inode、size、mtime、ctimeを照合する。出力directoryも結果公開の直前・直後に、保持中のdescriptorと要求pathが同じdevice・inodeを指すことを照合する。出力directoryは空でなければならない。`result.tmp.json`をmode 0600で排他的に作成、fsync後に`result.json`へhard linkして一時名を削除し、既存結果を置換しない。公開処理中の入力変更または出力directory差し替えを検出した場合は、自身が作成した一時結果と最終結果を保持中のdirectory descriptorから削除して失敗する。
+入力は`O_NOFOLLOW`で開き、解析前後と結果公開の直前・直後にdescriptorとpathのdevice、inode、size、mtime、ctimeを照合する。出力directoryも結果公開の直前・直後に、保持中のdescriptorと要求pathが同じdevice・inodeを指すことを照合する。出力directoryは空でなければならない。`result.tmp.json`をmode 0600で排他的に作成、fsync後に`result.json`へhard linkして一時名を削除し、既存結果を置換しない。公開したentryはdevice、inode、size、mtime、ctimeとserialized bytesを保持中のdescriptorから再検証する。公開処理中の入力変更、出力directory差し替え、または結果内容変更を検出した場合は、自身が作成した一時結果と最終結果を保持中のdirectory descriptorから削除して失敗する。
 
-これらは結果公開境界のmetadata checkpointであり、非協調writerに対する連続的な不変性やcontent同一性を証明しない。productionで強い完全性が必要な場合は、解析入力をimmutable snapshotまたはstorage versionへ固定し、leaseまたは信頼境界でのcontent hash検証を併用する。
+これらは結果公開境界のmetadata・content checkpointであり、非協調writerに対するcheckpoint間を含む連続的な不変性を証明しない。productionで強い完全性が必要な場合は、解析入力をimmutable snapshotまたはstorage versionへ固定し、leaseまたは信頼境界でのcontent hash検証を併用する。
 
 stdoutは`status`、`analyzedFrames`、`issues`件数だけのsummaryである。stderrは固定された一般errorだけを返し、入力pathやprocess詳細を含めない。exit codeは成功判定が0、request不正が2、理由付き`indeterminate`が3、処理境界の失敗が5である。
 

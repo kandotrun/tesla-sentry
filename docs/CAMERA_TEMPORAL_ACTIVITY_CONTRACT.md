@@ -63,6 +63,6 @@ aggregateは固定6 keyを持ち、camera配列は入力と同じ固定順であ
 
 ## CLI
 
-`python -m sentry_analyzer.camera_activity_cli --request request.json --input-root INPUT --output-root OUTPUT`で実行する。成功したactivity/no-signalはexit 0、aggregate indeterminateはexit 3、request違反はexit 2、処理境界の失敗はexit 5である。`result.json`は空のoutput directoryへmode `0600`で原子的に公開する。公開の直前・直後に6入力とoutput directoryの同一性を照合し、競合を検出した場合は自身が公開した結果を保持中のdirectory descriptorからロールバックして失敗する。
+`python -m sentry_analyzer.camera_activity_cli --request request.json --input-root INPUT --output-root OUTPUT`で実行する。成功したactivity/no-signalはexit 0、aggregate indeterminateはexit 3、request違反はexit 2、処理境界の失敗はexit 5である。`result.json`は空のoutput directoryへmode `0600`で原子的に公開する。公開の直前・直後に6入力、output directory、結果entryのdevice、inode、size、mtime、ctimeとserialized bytesを照合する。競合または結果内容変更を検出した場合は、自身が公開した結果を保持中のdirectory descriptorからロールバックして失敗する。
 
-metadata checkpointは非協調writerに対する連続的なcontent不変性を証明しない。productionで強い完全性が必要な場合は、immutable snapshotまたはstorage versionへ入力を固定し、leaseまたは信頼境界でのcontent hash検証を併用する。
+metadata・content checkpointは非協調writerに対するcheckpoint間を含む連続的なcontent不変性を証明しない。productionで強い完全性が必要な場合は、immutable snapshotまたはstorage versionへ入力を固定し、leaseまたは信頼境界でのcontent hash検証を併用する。

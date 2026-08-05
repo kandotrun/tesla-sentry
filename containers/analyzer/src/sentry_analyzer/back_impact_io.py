@@ -11,7 +11,7 @@ from typing import Final
 
 DIRECTORY_FLAGS: Final = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
 FILE_FLAGS: Final = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
-WRITE_FLAGS: Final = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC | os.O_NOFOLLOW
+WRITE_FLAGS: Final = os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC | os.O_NOFOLLOW
 TEMPORARY_NAME: Final = "result.tmp.json"
 FINAL_NAME: Final = "result.json"
 
@@ -98,17 +98,14 @@ class OutputHandle:
         try:
             _write_all(descriptor, payload)
             os.fsync(descriptor)
-            os.close(descriptor)
-            descriptor = -1
             self.verify_attached()
             verify_source()
             self.verify_attached()
-            temporary_identity = FileIdentity.from_stat(
-                os.stat(
-                    TEMPORARY_NAME,
-                    dir_fd=self.directory_descriptor,
-                    follow_symlinks=False,
-                )
+            temporary_identity = FileIdentity.from_stat(os.fstat(descriptor))
+            _verify_entry_identity(
+                self.directory_descriptor,
+                TEMPORARY_NAME,
+                temporary_identity,
             )
             os.link(
                 TEMPORARY_NAME,
@@ -118,18 +115,24 @@ class OutputHandle:
                 follow_symlinks=False,
             )
             final_created = True
-            self.verify_attached()
-            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
-            verify_source()
-            self.verify_attached()
-            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
+            published_identity = _verify_published_result(
+                descriptor,
+                self.directory_descriptor,
+                payload,
+                None,
+            )
+            self._verify_publication(descriptor, published_identity, payload, verify_source)
             os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
             os.fsync(self.directory_descriptor)
-            self.verify_attached()
-            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
-            verify_source()
-            self.verify_attached()
-            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
+            published_identity = _verify_published_result(
+                descriptor,
+                self.directory_descriptor,
+                payload,
+                None,
+            )
+            self._verify_publication(descriptor, published_identity, payload, verify_source)
+            os.close(descriptor)
+            descriptor = -1
         except (OSError, TypeError, ValueError):
             if descriptor >= 0:
                 os.close(descriptor)
@@ -150,6 +153,19 @@ class OutputHandle:
                 os.fsync(self.directory_descriptor)
             raise
 
+    def _verify_publication(
+        self,
+        descriptor: int,
+        identity: FileIdentity,
+        payload: bytes,
+        verify_source: Callable[[], None],
+    ) -> None:
+        self.verify_attached()
+        _verify_published_result(descriptor, self.directory_descriptor, payload, identity)
+        verify_source()
+        self.verify_attached()
+        _verify_published_result(descriptor, self.directory_descriptor, payload, identity)
+
 
 def _entry_exists(directory_descriptor: int, name: str) -> bool:
     try:
@@ -165,7 +181,35 @@ def _verify_entry_identity(
     expected: FileIdentity,
 ) -> None:
     metadata = os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
-    if FileIdentity.from_stat(metadata).object_key() != expected.object_key():
+    if FileIdentity.from_stat(metadata) != expected:
+        raise OSError("output changed during analysis")
+
+
+def _verify_published_result(
+    descriptor: int,
+    directory_descriptor: int,
+    payload: bytes,
+    expected: FileIdentity | None,
+) -> FileIdentity:
+    identity = FileIdentity.from_stat(os.fstat(descriptor))
+    if expected is not None and identity != expected:
+        raise OSError("output changed during analysis")
+    _verify_entry_identity(directory_descriptor, FINAL_NAME, identity)
+    _verify_payload(descriptor, payload)
+    if FileIdentity.from_stat(os.fstat(descriptor)) != identity:
+        raise OSError("output changed during analysis")
+    _verify_entry_identity(directory_descriptor, FINAL_NAME, identity)
+    return identity
+
+
+def _verify_payload(descriptor: int, payload: bytes) -> None:
+    position = 0
+    while position < len(payload):
+        chunk = os.pread(descriptor, len(payload) - position, position)
+        if not chunk or chunk != payload[position : position + len(chunk)]:
+            raise OSError("output changed during analysis")
+        position += len(chunk)
+    if os.pread(descriptor, 1, position):
         raise OSError("output changed during analysis")
 
 

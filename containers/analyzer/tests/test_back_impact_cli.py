@@ -221,6 +221,49 @@ class BackImpactCliTests(unittest.TestCase):
             self.assertFalse((output_root / "result.json").exists())
             self.assertFalse((detached_output / "result.json").exists())
 
+    def test_result_mutation_during_publication_rolls_back_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            link = os.link
+
+            def link_then_mutate(
+                src: str,
+                dst: str,
+                *,
+                src_dir_fd: int | None = None,
+                dst_dir_fd: int | None = None,
+                follow_symlinks: bool = True,
+            ) -> None:
+                link(
+                    src,
+                    dst,
+                    src_dir_fd=src_dir_fd,
+                    dst_dir_fd=dst_dir_fd,
+                    follow_symlinks=follow_symlinks,
+                )
+                if dst_dir_fd is None:
+                    raise AssertionError("missing output descriptor")
+                descriptor = os.open(dst, os.O_WRONLY, dir_fd=dst_dir_fd)
+                try:
+                    os.pwrite(descriptor, b"X", 0)
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
+
+            with (
+                patch("sentry_analyzer.back_impact_io.os.link", link_then_mutate),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
+
     def test_late_final_entry_is_not_replaced(self) -> None:
         def run(entry_type: str) -> None:
             with tempfile.TemporaryDirectory() as directory:
