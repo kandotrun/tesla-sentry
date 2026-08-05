@@ -307,6 +307,35 @@ class BackImpactCliTests(unittest.TestCase):
             with self.subTest(entry_type=entry_type):
                 run(entry_type)
 
+    def test_late_temporary_replacement_is_not_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            entry = output_root / TEMPORARY_NAME
+            calls: list[None] = []
+            verify_attached = OutputHandle.verify_attached
+
+            def replace_temporary(handle: OutputHandle) -> None:
+                verify_attached(handle)
+                calls.append(None)
+                if len(calls) == 4:
+                    entry.unlink()
+                    entry.write_bytes(b"replacement")
+
+            with (
+                patch.object(OutputHandle, "verify_attached", replace_temporary),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertEqual(entry.read_bytes(), b"replacement")
+            self.assertFalse((output_root / FINAL_NAME).exists())
+
     def test_input_root_swap_keeps_open_descriptor_anchored(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
