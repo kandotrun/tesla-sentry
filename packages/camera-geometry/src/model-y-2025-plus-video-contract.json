@@ -1,0 +1,11 @@
+{
+  "profileId": "model-y-2025-plus-long-range-2896x1876-v2",
+  "cameras": {
+    "front": { "codec": "h264", "height": 1876, "width": 2896 },
+    "back": { "codec": "h264", "height": 938, "width": 1448 },
+    "left_repeater": { "codec": "h264", "height": 938, "width": 1448 },
+    "right_repeater": { "codec": "h264", "height": 938, "width": 1448 },
+    "left_pillar": { "codec": "h264", "height": 938, "width": 1448 },
+    "right_pillar": { "codec": "h264", "height": 938, "width": 1448 }
+  }
+}

@@ -1,0 +1,1891 @@
+{
+  "schemaVersion": 1,
+  "inventory": {
+    "mp4Count": 12902,
+    "mp4TotalBytes": 433020823067,
+    "completeSixCameraGroups": 2134
+  },
+  "source": {
+    "before": {
+      "mp4Count": 12902,
+      "mp4TotalBytes": 433020823067
+    },
+    "after": {
+      "mp4Count": 12902,
+      "mp4TotalBytes": 433020823067
+    }
+  },
+  "selection": {
+    "version": "repeater-measurement-v1",
+    "selectedGroups": 24,
+    "calibrationGroups": 12,
+    "holdoutGroups": 12,
+    "calibrationHoldoutOverlap": 0,
+    "cohortOrdinals": {
+      "calibration": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      "holdout": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    },
+    "priorMidpointOverlap": 0,
+    "priorEdgeEquispacedOverlap": 0,
+    "constraintReplacements": 1,
+    "relativeSeconds": [10, 30, 50],
+    "extractedImages": 144,
+    "decodedCameras": ["left_repeater", "right_repeater"],
+    "anonymousSelectionAudit": {
+      "method": "HMAC-SHA256",
+      "scope": "single_authorized_measurement_run",
+      "auditOnly": true,
+      "mappingRetained": false,
+      "secretRetained": false,
+      "reproducibleAcrossReruns": false,
+      "tokenCount": 24,
+      "tokenCollisions": 0,
+      "crossCohortTokenOverlap": 0
+    }
+  },
+  "normalization": {
+    "width": 1448,
+    "height": 938,
+    "diagonalPixels": 1725.267515489,
+    "errorUnit": "absolute_pixel_offset_divided_by_image_diagonal"
+  },
+  "method": {
+    "distribution": "one_deterministic_selection_per_inventory_stratum",
+    "excludedPriorSets": "midpoint_24_and_edge_equispaced_10_with_two_position_margin",
+    "groupStatistic": "rgb_median_across_relative_seconds",
+    "anchorScore": "flank_luma_mean_minus_center_luma_mean",
+    "anchorCandidateYStartPixels": 430,
+    "anchorCandidateYStopInclusivePixels": 830,
+    "anchorCandidateYStepPixels": 5,
+    "minimumAnchorYSeparationPixels": 120,
+    "calibrationSearchRadiusPixels": 20,
+    "holdoutSearchRadiusPixels": 30,
+    "anchorSelectionCohort": "calibration_only",
+    "clipCodec": "h264",
+    "minimumClipDurationSeconds": 50
+  },
+  "thresholds": {
+    "groupTemporalMedianAnchorErrorNormalized": 0.01
+  },
+  "backDecoded": false,
+  "humanVisibilityMachineReproducible": false,
+  "rawAnchorExtractionImplemented": false,
+  "cameras": [
+    {
+      "camera": "left_repeater",
+      "vehicleFacingImageEdge": "left",
+      "anchors": [
+        {
+          "id": "A",
+          "normalizedPoint": {
+            "x": 0.04281768,
+            "y": 0.66098081
+          },
+          "calibration": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.002318481, 0.00057962, 0, 0.00057962, 0, 0, 0, 0.00057962, 0.00057962, 0.002318481,
+              0.002318481, 0
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.002318481,
+            "passCount": 12
+          },
+          "holdout": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.001159241, 0.00057962, 0.00057962, 0.006955443, 0.00057962, 0, 0, 0.002318481, 0,
+              0.00057962, 0, 0.001159241
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.006955443,
+            "passCount": 12
+          },
+          "timepointMatcher": {
+            "calibration": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.006375823
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 36,
+              "maxErrorNormalized": 0.006375823,
+              "allAtOrBelowThreshold": true
+            },
+            "holdout": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.013331266
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.006955443
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.006955443
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.006375823
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001738861
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 35,
+              "maxErrorNormalized": 0.013331266,
+              "allAtOrBelowThreshold": false
+            }
+          }
+        },
+        {
+          "id": "B",
+          "normalizedPoint": {
+            "x": 0.05179558,
+            "y": 0.799573561
+          },
+          "calibration": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.00057962, 0.00057962, 0, 0.00057962, 0.00057962, 0, 0, 0, 0, 0, 0.00057962,
+              0.00057962
+            ],
+            "medianErrorNormalized": 0.00028981,
+            "maxErrorNormalized": 0.00057962,
+            "passCount": 12
+          },
+          "holdout": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.003477722, 0.00057962, 0, 0, 0.002318481, 0, 0, 0.001738861, 0, 0.00057962,
+              0.00057962, 0.001738861
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.003477722,
+            "passCount": 12
+          },
+          "timepointMatcher": {
+            "calibration": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 36,
+              "maxErrorNormalized": 0.001159241,
+              "allAtOrBelowThreshold": true
+            },
+            "holdout": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.003477722
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.005216582
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001738861
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001738861
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 36,
+              "maxErrorNormalized": 0.005216582,
+              "allAtOrBelowThreshold": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "camera": "right_repeater",
+      "vehicleFacingImageEdge": "right",
+      "anchors": [
+        {
+          "id": "A",
+          "normalizedPoint": {
+            "x": 0.953729282,
+            "y": 0.623667377
+          },
+          "calibration": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.005216582, 0.004057342, 0.004057342, 0, 0.00057962, 0, 0, 0, 0.00057962, 0,
+              0.00057962, 0.002898101
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.005216582,
+            "passCount": 12
+          },
+          "holdout": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.005216582, 0.004057342, 0.004636962, 0.002898101, 0.001738861, 0, 0, 0, 0.00057962,
+              0, 0.00057962, 0.002318481
+            ],
+            "medianErrorNormalized": 0.0011592405,
+            "maxErrorNormalized": 0.005216582,
+            "passCount": 12
+          },
+          "timepointMatcher": {
+            "calibration": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.005216582
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.006375823
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.005216582
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.004057342
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.004057342
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.004057342
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.004057342
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.003477722
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.004057342
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002898101
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002898101
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 36,
+              "maxErrorNormalized": 0.006375823,
+              "allAtOrBelowThreshold": true
+            },
+            "holdout": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.005796203
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.005216582
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.005216582
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.004057342
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.004057342
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.004057342
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.004636962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.004636962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.004636962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002898101
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.013910886
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001738861
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 35,
+              "maxErrorNormalized": 0.013910886,
+              "allAtOrBelowThreshold": false
+            }
+          }
+        },
+        {
+          "id": "B",
+          "normalizedPoint": {
+            "x": 0.938535912,
+            "y": 0.815565032
+          },
+          "calibration": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.00057962, 0, 0.001738861, 0, 0.00057962, 0, 0, 0, 0.00057962, 0.00057962,
+              0.00057962, 0.001159241
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.001738861,
+            "passCount": 12
+          },
+          "holdout": {
+            "groupTemporalMedianErrorsNormalized": [
+              0.00057962, 0, 0.00057962, 0.001159241, 0.00057962, 0, 0, 0.001738861, 0.00057962,
+              0.00057962, 0, 0.00057962
+            ],
+            "medianErrorNormalized": 0.00057962,
+            "maxErrorNormalized": 0.001738861,
+            "passCount": 12
+          },
+          "timepointMatcher": {
+            "calibration": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001738861
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001738861
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 36,
+              "maxErrorNormalized": 0.001738861,
+              "allAtOrBelowThreshold": true
+            },
+            "holdout": {
+              "observations": [
+                {
+                  "ordinal": 1,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 2,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 3,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 4,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.001159241
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 5,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.001159241
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 6,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 7,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 8,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.013331266
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.002318481
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.002318481
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 9,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 10,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 11,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0
+                    }
+                  ]
+                },
+                {
+                  "ordinal": 12,
+                  "timepoints": [
+                    {
+                      "relativeSecond": 10,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 30,
+                      "errorNormalized": 0.00057962
+                    },
+                    {
+                      "relativeSecond": 50,
+                      "errorNormalized": 0.00057962
+                    }
+                  ]
+                }
+              ],
+              "total": 36,
+              "passCount": 35,
+              "maxErrorNormalized": 0.013331266,
+              "allAtOrBelowThreshold": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

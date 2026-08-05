@@ -8,6 +8,12 @@ TeslaCamフォルダを選ぶだけで、数百本のセントリー映像から
 
 ブラウザ内の事前検査、開発環境R2への明示的なアップロード縦切り、1イベント単位のFFmpeg前処理Containerが動作します。
 
+Model Y向けの純粋な型付きカメラ幾何V2も実装済みです。
+
+この契約は、左右repeaterを2方向の直接幾何として扱い、`front`、`back`、左右pillarを4方向の文脈役割として扱います。
+
+ただし、実動画から固定アンカー、物体mask、track、文脈関連付け、カバレッジ証拠を作るproducerとpipelineは未実装です。
+
 1. デスクトップChromeでTeslaCamフォルダを選択する
 2. `SentryClips`をイベントとカメラ単位にローカル整理する
 3. 対象MP4の時間、コーデック、解像度、暗号化と破損候補をブラウザ内で確認する
@@ -31,7 +37,9 @@ MP4事前検査はファイル全体を一括読込せず、1 MiB単位で必要
 
 フォルダ選択と事前検査だけでは、動画も結果も外部へ送信しません。
 `eligible`動画は、開発環境アップロードを明示的に押した場合だけ、ローカルWorker/R2へ送信します。本番ストレージには接続しません。
-実TeslaCamの初回互換性確認、アップロード可否契約v1、開発用の1ファイル単位PUT・複数ジョブ分割・サーバー側再検証、FFmpeg前処理を実装済みです。次は車種・年式・カメラ世代別の固定カメラプロファイルと車体マスクを追加し、本番化前にmultipart・中断再開を実装します。
+実TeslaCamの初回互換性確認、アップロード可否契約v1、開発用の1ファイル単位PUT、複数ジョブ分割、サーバー側再検証、FFmpeg前処理、型付きカメラ幾何V2を実装済みです。
+
+次の実装境界は、raw-videoからカメラ幾何V2が受理するdescriptorと候補証拠を生成するproducerであり、本番向けmultipartと中断再開は別の未実装境界です。
 
 ## プロダクト原則
 
@@ -47,6 +55,7 @@ MP4事前検査はファイル全体を一括読込せず、1 MiB単位で必要
 - [プロジェクトコンテキスト](docs/PROJECT_CONTEXT.md)
 - [アップロード可否契約 v1](docs/UPLOAD_ELIGIBILITY_CONTRACT.md)
 - [イベント前処理契約 v1](docs/EVENT_PREPROCESSING_CONTRACT.md)
+- [Model Yカメラ幾何V2](docs/CAMERA_GEOMETRY_NOTES.md)
 - [事業・MVP計画書（2026-08-03）](docs/product/tesla-sentry-ai-service-plan-2026-08-03.md)
 - [エージェント向け開発ルール](AGENTS.md)
 
@@ -83,6 +92,7 @@ packages/teslacam-parser/   TeslaCamパス、イベント、カメラ整理
 packages/video-preflight/   MP4ヘッダーの分割読込と事前判定
 packages/upload-contract/   ローカルのアップロード可否契約v1
 packages/upload-session/    開発用ジョブ・署名トークン・SHA-256
+packages/camera-geometry/   Model Y向けの型付きカメラ幾何V2
 containers/analyzer/        Python + FFmpegの1イベント前処理CLI/Container
 docs/                        プロダクト判断と原計画
 ```

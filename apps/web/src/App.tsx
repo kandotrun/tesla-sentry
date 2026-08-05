@@ -1,3 +1,4 @@
+import type { ContactVerdict } from "@sentry-check/camera-geometry";
 import {
   type LocalFileDescriptor,
   parseTeslaCamManifest,
@@ -6,6 +7,7 @@ import {
 } from "@sentry-check/teslacam-parser";
 import { buildUploadPlanV1, type UploadPlanV1 } from "@sentry-check/upload-contract";
 import { type ChangeEvent, useEffect, useId, useRef, useState } from "react";
+import { ContactVerdictPanel } from "./ContactVerdictPanel";
 import { PreflightPanel } from "./PreflightPanel";
 import "./styles.css";
 import { DevUploadPanel } from "./upload/DevUploadPanel";
@@ -217,10 +219,14 @@ function ManifestPanel({
 }
 
 interface AppProps {
+  readonly analysisVerdict?: ContactVerdict | null;
   readonly probeVideoFile?: ClipPreflightProbe;
 }
 
-export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {}) {
+export function App({
+  analysisVerdict,
+  probeVideoFile = defaultClipPreflightProbe,
+}: AppProps = {}) {
   const inputId = useId();
   const [manifest, setManifest] = useState<TeslaCamManifest | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
@@ -367,12 +373,15 @@ export function App({ probeVideoFile = defaultClipPreflightProbe }: AppProps = {
       </section>
 
       {manifest && uploadPlan ? (
-        <ManifestPanel
-          filesByFingerprint={filesByFingerprint}
-          manifest={manifest}
-          plan={uploadPlan}
-          preflight={preflight}
-        />
+        <>
+          {analysisVerdict ? <ContactVerdictPanel verdict={analysisVerdict} /> : null}
+          <ManifestPanel
+            filesByFingerprint={filesByFingerprint}
+            manifest={manifest}
+            plan={uploadPlan}
+            preflight={preflight}
+          />
+        </>
       ) : (
         <section className="waiting-grid" aria-label="処理ステップ">
           <article>

@@ -11,6 +11,7 @@
     "cf:dry-run": "npm run build && wrangler deploy --dry-run --config wrangler.jsonc"
   },
   "dependencies": {
+    "@sentry-check/camera-geometry": "^0.0.0",
     "@sentry-check/teslacam-parser": "*",
     "@sentry-check/upload-contract": "*",
     "@sentry-check/upload-session": "*",

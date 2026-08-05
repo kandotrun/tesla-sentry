@@ -1,3 +1,4 @@
+import type { ContactVerdict } from "@sentry-check/camera-geometry";
 import type { VideoPreflightResult } from "@sentry-check/video-preflight";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -43,6 +44,29 @@ function deferredPreflight() {
 }
 
 describe("App", () => {
+  it("shows an analysis verdict above the selected-folder manifest", async () => {
+    const analysisVerdict: ContactVerdict = {
+      reasons: ["back_temporal_impact_signal"],
+      verdict: "possible_contact",
+    };
+    render(<App analysisVerdict={analysisVerdict} probeVideoFile={readyProbe} />);
+
+    fireEvent.change(screen.getByLabelText("TeslaCamフォルダを選択"), {
+      target: {
+        files: [localFile("TeslaCam/SentryClips/2026-08-03_12-34-56/2026-08-03_12-32-00-back.mp4")],
+      },
+    });
+
+    const verdictHeading = await screen.findByRole("heading", {
+      name: "接触の可能性があります",
+    });
+    const manifestHeading = screen.getByRole("heading", { name: "アップロード前の確認" });
+
+    expect(verdictHeading.compareDocumentPosition(manifestHeading)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it("explains the local-first folder selection before any file is chosen", () => {
     renderApp();
 
@@ -59,6 +83,9 @@ describe("App", () => {
     expect(screen.queryByText("ローカル事前検査版 · 動画送信なし")).not.toBeInTheDocument();
     expect(screen.getByText("フォルダを選んで事前検査する")).toBeInTheDocument();
     expect(screen.getByText("MP4ヘッダーもブラウザ内だけで確認します。")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /接触.*所見|接触の可能性|判定できません/ }),
+    ).not.toBeInTheDocument();
     const input = screen.getByLabelText("TeslaCamフォルダを選択");
     expect(input).toHaveAttribute("webkitdirectory");
     expect(input).toHaveAttribute("multiple");
