@@ -8,7 +8,17 @@
     }
   },
   "files": {
-    "includes": ["**", "!!**/node_modules", "!!**/dist", "!!**/coverage", "!!**/.wrangler"]
+    "includes": [
+      "**",
+      "!!**/node_modules",
+      "!!**/dist",
+      "!!**/coverage",
+      "!!**/.wrangler",
+      "!!**/.omo",
+      "!!**/.codegraph",
+      "!!containers/analyzer/tests/fixtures/camera-temporal-activity-calibration-v1.json",
+      "!!packages/camera-geometry/tests/fixtures/camera-temporal-activity-v1.json"
+    ]
   },
   "formatter": {
     "enabled": true,

@@ -1,6 +1,6 @@
 # Model Yカメラ幾何V2の実装メモ
 
-更新：2026-08-05 JST
+更新：2026-08-06 JST
 
 ## 対象
 
@@ -121,6 +121,10 @@ rear-only、front-only、pillar-onlyの候補も、直接カメラへ解決で�
 
 有効なrepeater直接証拠による`contact`を`possible_contact`より優先する。back signalだけで`contact`を返さず、`possible_contact`を`no_contact_observed`へ落とさない。
 
+6方向の`camera-temporal-activity-v1`は、固定camera roleごとに短時間の画素差とgradient変化が持続した場合を別の`possible_contact`証拠にする。front、back、左右pillar、左右repeaterのどの方向でもactivity候補を残せるが、この時間変化だけでは`contact`へ昇格しない。
+
+有効な6方向aggregateで1方向でもactivityなら`camera_temporal_activity_signal`を返す。全6方向がno-signalの場合は既存の幾何判定を維持し、no-signalだけから車両全体の非接触を作らない。aggregateがinvalidまたはindeterminateで、既存のcontact/possible-contactがない場合は`camera_activity_analysis_unavailable`へ閉じる。
+
 `indeterminate`は、接触または離隔を決める証拠が不足した場合に理由codeとともに返す。
 
 固定されたカメラ配置は同じ条件での幾何比較を再現しやすくする。
@@ -140,6 +144,9 @@ rear-only、front-only、pillar-onlyの候補も、直接カメラへ解決で�
 - H.264、display/coded size、canonical SPS crop、rotation、duration、fpsを再検証するread-only `back` producer
 - 8 fps、160×104 grayscaleのstream解析と固定Schema CLI
 - 匿名の全back/rear_view在庫verifierと日本語表示mapping
+- 6方向の固定media profile、時間変化producer、read-only aggregate CLI
+- PythonとTypeScriptで一致する方向別/aggregate固定Schemaとruntime parser
+- 時間変化を接触確定へ使わないadditive event policyと日本語表示mapping
 - 文脈カメラを直接幾何評価へ渡した場合のruntime拒否
 
 2026-08-05の実在庫検証ではback/rear_view 2,135件、62,184,707,400 bytesをread-onlyで解析し、1,914件を`no_impact_signal_observed`、221件を理由付き`indeterminate`、0件を`possible_contact`と集計した。正解ラベルがないため、これはprecision、recall、接触検出率ではない。詳細は[back時系列解析の実在庫レポート](BACK_IMPACT_REAL_DATA_REPORT.md)と[解析契約](BACK_IMPACT_ANALYSIS_CONTRACT.md)へ記録する。
@@ -159,7 +166,7 @@ rear-only、front-only、pillar-onlyの候補も、直接カメラへ解決で�
 
 現在の公開関数は、上流が型付きの幾何証拠を正しく生成した後の判定契約である。
 
-`back` raw-video producerは時間変化の可能性証拠を生成できるが、実動画だけを渡して接触有無を確定する機能ではない。
+`back` V1と6方向raw-video producerは時間変化の可能性証拠を生成できるが、実動画だけを渡して接触有無を確定する機能ではない。
 
 ## プライバシー
 

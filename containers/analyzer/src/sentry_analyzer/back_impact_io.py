@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import stat
 import sys
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -11,7 +11,7 @@ from typing import Final
 
 DIRECTORY_FLAGS: Final = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
 FILE_FLAGS: Final = os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
-WRITE_FLAGS: Final = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC | os.O_NOFOLLOW
+WRITE_FLAGS: Final = os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC | os.O_NOFOLLOW
 TEMPORARY_NAME: Final = "result.tmp.json"
 FINAL_NAME: Final = "result.json"
 
@@ -20,10 +20,22 @@ FINAL_NAME: Final = "result.json"
 class FileIdentity:
     device: int
     inode: int
+    size: int
+    modified_ns: int
+    changed_ns: int
 
     @classmethod
     def from_stat(cls, metadata: os.stat_result) -> FileIdentity:
-        return cls(metadata.st_dev, metadata.st_ino)
+        return cls(
+            metadata.st_dev,
+            metadata.st_ino,
+            metadata.st_size,
+            metadata.st_mtime_ns,
+            metadata.st_ctime_ns,
+        )
+
+    def object_key(self) -> tuple[int, int]:
+        return (self.device, self.inode)
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,10 +77,11 @@ class OutputHandle:
         path_identity = FileIdentity.from_stat(
             os.stat(self.leaf_name, dir_fd=self.parent_descriptor, follow_symlinks=False)
         )
-        if directory_identity != self.identity or path_identity != self.identity:
+        expected = self.identity.object_key()
+        if directory_identity.object_key() != expected or path_identity.object_key() != expected:
             raise OSError("output changed during analysis")
 
-    def write(self, payload: bytes) -> None:
+    def write(self, payload: bytes, verify_source: Callable[[], None]) -> None:
         self.verify_attached()
         if _entry_exists(self.directory_descriptor, TEMPORARY_NAME):
             raise FileExistsError("temporary result exists")
@@ -83,9 +96,15 @@ class OutputHandle:
         try:
             _write_all(descriptor, payload)
             os.fsync(descriptor)
-            os.close(descriptor)
-            descriptor = -1
             self.verify_attached()
+            verify_source()
+            self.verify_attached()
+            temporary_identity = FileIdentity.from_stat(os.fstat(descriptor))
+            _verify_entry_identity(
+                self.directory_descriptor,
+                TEMPORARY_NAME,
+                temporary_identity,
+            )
             os.link(
                 TEMPORARY_NAME,
                 FINAL_NAME,
@@ -93,14 +112,39 @@ class OutputHandle:
                 dst_dir_fd=self.directory_descriptor,
                 follow_symlinks=False,
             )
-            os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
+            published_identity = _verify_published_result(
+                descriptor,
+                self.directory_descriptor,
+                payload,
+                None,
+            )
+            self._verify_publication(descriptor, published_identity, payload, verify_source)
             os.fsync(self.directory_descriptor)
+            self._verify_publication(descriptor, published_identity, payload, verify_source)
+            os.close(descriptor)
+            descriptor = -1
         except (OSError, TypeError, ValueError):
             if descriptor >= 0:
-                os.close(descriptor)
-            with suppress(FileNotFoundError):
-                os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
+                try:
+                    _invalidate_result(descriptor)
+                finally:
+                    os.close(descriptor)
+            with suppress(OSError):
+                os.fsync(self.directory_descriptor)
             raise
+
+    def _verify_publication(
+        self,
+        descriptor: int,
+        identity: FileIdentity,
+        payload: bytes,
+        verify_source: Callable[[], None],
+    ) -> None:
+        self.verify_attached()
+        _verify_published_result(descriptor, self.directory_descriptor, payload, identity)
+        verify_source()
+        self.verify_attached()
+        _verify_published_result(descriptor, self.directory_descriptor, payload, identity)
 
 
 def _entry_exists(directory_descriptor: int, name: str) -> bool:
@@ -109,6 +153,49 @@ def _entry_exists(directory_descriptor: int, name: str) -> bool:
     except FileNotFoundError:
         return False
     return True
+
+
+def _invalidate_result(descriptor: int) -> None:
+    os.ftruncate(descriptor, 0)
+    os.fsync(descriptor)
+
+
+def _verify_entry_identity(
+    directory_descriptor: int,
+    name: str,
+    expected: FileIdentity,
+) -> None:
+    metadata = os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
+    if FileIdentity.from_stat(metadata) != expected:
+        raise OSError("output changed during analysis")
+
+
+def _verify_published_result(
+    descriptor: int,
+    directory_descriptor: int,
+    payload: bytes,
+    expected: FileIdentity | None,
+) -> FileIdentity:
+    identity = FileIdentity.from_stat(os.fstat(descriptor))
+    if expected is not None and identity != expected:
+        raise OSError("output changed during analysis")
+    _verify_entry_identity(directory_descriptor, FINAL_NAME, identity)
+    _verify_payload(descriptor, payload)
+    if FileIdentity.from_stat(os.fstat(descriptor)) != identity:
+        raise OSError("output changed during analysis")
+    _verify_entry_identity(directory_descriptor, FINAL_NAME, identity)
+    return identity
+
+
+def _verify_payload(descriptor: int, payload: bytes) -> None:
+    position = 0
+    while position < len(payload):
+        chunk = os.pread(descriptor, len(payload) - position, position)
+        if not chunk or chunk != payload[position : position + len(chunk)]:
+            raise OSError("output changed during analysis")
+        position += len(chunk)
+    if os.pread(descriptor, 1, position):
+        raise OSError("output changed during analysis")
 
 
 def _write_all(descriptor: int, payload: bytes) -> None:

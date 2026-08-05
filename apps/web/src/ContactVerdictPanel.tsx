@@ -10,7 +10,10 @@ function presentVerdict(verdict: ContactVerdict): VerdictPresentation {
   switch (verdict.verdict) {
     case "possible_contact":
       return {
-        body: "後方映像で接触の可能性を示す動きを検出しました。映像を確認してください。",
+        body:
+          verdict.reasons[0] === "camera_temporal_activity_signal"
+            ? "カメラ映像で接触の可能性につながる時間変化を検出しました。接触を確定する結果ではありません。映像を確認してください。"
+            : "後方映像で接触の可能性を示す動きを検出しました。映像を確認してください。",
         heading: "接触の可能性があります",
         modifier: "warning",
       };

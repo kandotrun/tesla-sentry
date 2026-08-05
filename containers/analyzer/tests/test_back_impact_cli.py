@@ -140,6 +140,24 @@ class BackImpactCliTests(unittest.TestCase):
             )
             self.assertFalse((output_root / "result.json").exists())
 
+    def test_in_place_input_mutation_fails_closed_without_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+
+            def mutate(_: InputHandle) -> None:
+                (input_root / "back.mp4").write_bytes(b"mutated-media")
+
+            with self.assertRaises(OSError):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames(), mutate),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
+
     def test_output_swap_fails_closed_without_touching_replacement(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -163,6 +181,90 @@ class BackImpactCliTests(unittest.TestCase):
             self.assertEqual((output_root / "sentinel").stat().st_mtime_ns, sentinel_mtime[0])
             self.assertFalse((output_root / "result.json").exists())
             self.assertFalse((root / "old-output/result.json").exists())
+
+    def test_output_swap_during_publication_rolls_back_detached_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            detached_output = root / "detached-output"
+            link = os.link
+
+            def swap_then_link(
+                src: str,
+                dst: str,
+                *,
+                src_dir_fd: int | None = None,
+                dst_dir_fd: int | None = None,
+                follow_symlinks: bool = True,
+            ) -> None:
+                output_root.rename(detached_output)
+                output_root.mkdir()
+                link(
+                    src,
+                    dst,
+                    src_dir_fd=src_dir_fd,
+                    dst_dir_fd=dst_dir_fd,
+                    follow_symlinks=follow_symlinks,
+                )
+
+            with (
+                patch("sentry_analyzer.back_impact_io.os.link", swap_then_link),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
+            self.assertEqual((detached_output / "result.json").read_bytes(), b"")
+            self.assertEqual((detached_output / TEMPORARY_NAME).read_bytes(), b"")
+
+    def test_result_mutation_during_publication_rolls_back_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            link = os.link
+
+            def link_then_mutate(
+                src: str,
+                dst: str,
+                *,
+                src_dir_fd: int | None = None,
+                dst_dir_fd: int | None = None,
+                follow_symlinks: bool = True,
+            ) -> None:
+                link(
+                    src,
+                    dst,
+                    src_dir_fd=src_dir_fd,
+                    dst_dir_fd=dst_dir_fd,
+                    follow_symlinks=follow_symlinks,
+                )
+                if dst_dir_fd is None:
+                    raise AssertionError("missing output descriptor")
+                descriptor = os.open(dst, os.O_WRONLY, dir_fd=dst_dir_fd)
+                try:
+                    os.pwrite(descriptor, b"X", 0)
+                    os.fsync(descriptor)
+                finally:
+                    os.close(descriptor)
+
+            with (
+                patch("sentry_analyzer.back_impact_io.os.link", link_then_mutate),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertEqual((output_root / "result.json").read_bytes(), b"")
+            self.assertEqual((output_root / TEMPORARY_NAME).read_bytes(), b"")
 
     def test_late_final_entry_is_not_replaced(self) -> None:
         def run(entry_type: str) -> None:
@@ -201,11 +303,40 @@ class BackImpactCliTests(unittest.TestCase):
                 metadata = entry.lstat()
                 value = entry.read_bytes() if entry_type == "regular" else os.readlink(entry)
                 self.assertEqual((metadata.st_ino, metadata.st_mtime_ns, value), before[0])
-                self.assertFalse((output_root / TEMPORARY_NAME).exists())
+                self.assertEqual((output_root / TEMPORARY_NAME).read_bytes(), b"")
 
         for entry_type in ("regular", "dangling"):
             with self.subTest(entry_type=entry_type):
                 run(entry_type)
+
+    def test_late_temporary_replacement_is_not_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            entry = output_root / TEMPORARY_NAME
+            calls: list[None] = []
+            verify_attached = OutputHandle.verify_attached
+
+            def replace_temporary(handle: OutputHandle) -> None:
+                verify_attached(handle)
+                calls.append(None)
+                if len(calls) == 4:
+                    entry.unlink()
+                    entry.write_bytes(b"replacement")
+
+            with (
+                patch.object(OutputHandle, "verify_attached", replace_temporary),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertEqual(entry.read_bytes(), b"replacement")
+            self.assertFalse((output_root / FINAL_NAME).exists())
 
     def test_input_root_swap_keeps_open_descriptor_anchored(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

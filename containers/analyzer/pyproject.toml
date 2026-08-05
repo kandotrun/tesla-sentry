@@ -7,6 +7,7 @@ dependencies = []
 
 [project.scripts]
 tesla-sentry-back-impact = "sentry_analyzer.back_impact_cli:main"
+tesla-sentry-camera-activity = "sentry_analyzer.camera_activity_cli:main"
 
 [tool.pyright]
 pythonVersion = "3.11"
