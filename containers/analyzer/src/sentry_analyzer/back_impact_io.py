@@ -87,14 +87,12 @@ class OutputHandle:
             raise FileExistsError("temporary result exists")
         if _entry_exists(self.directory_descriptor, FINAL_NAME):
             raise FileExistsError("final result exists")
-        final_created = False
         descriptor = os.open(
             TEMPORARY_NAME,
             WRITE_FLAGS,
             0o600,
             dir_fd=self.directory_descriptor,
         )
-        temporary_object_key = FileIdentity.from_stat(os.fstat(descriptor)).object_key()
         try:
             _write_all(descriptor, payload)
             os.fsync(descriptor)
@@ -114,7 +112,6 @@ class OutputHandle:
                 dst_dir_fd=self.directory_descriptor,
                 follow_symlinks=False,
             )
-            final_created = True
             published_identity = _verify_published_result(
                 descriptor,
                 self.directory_descriptor,
@@ -122,31 +119,16 @@ class OutputHandle:
                 None,
             )
             self._verify_publication(descriptor, published_identity, payload, verify_source)
-            os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
             os.fsync(self.directory_descriptor)
-            published_identity = _verify_published_result(
-                descriptor,
-                self.directory_descriptor,
-                payload,
-                None,
-            )
             self._verify_publication(descriptor, published_identity, payload, verify_source)
             os.close(descriptor)
             descriptor = -1
         except (OSError, TypeError, ValueError):
             if descriptor >= 0:
-                os.close(descriptor)
-            _unlink_if_owned(
-                self.directory_descriptor,
-                TEMPORARY_NAME,
-                temporary_object_key,
-            )
-            if final_created:
-                _unlink_if_owned(
-                    self.directory_descriptor,
-                    FINAL_NAME,
-                    temporary_object_key,
-                )
+                try:
+                    _invalidate_result(descriptor)
+                finally:
+                    os.close(descriptor)
             with suppress(OSError):
                 os.fsync(self.directory_descriptor)
             raise
@@ -173,19 +155,9 @@ def _entry_exists(directory_descriptor: int, name: str) -> bool:
     return True
 
 
-def _unlink_if_owned(
-    directory_descriptor: int,
-    name: str,
-    expected: tuple[int, int],
-) -> None:
-    try:
-        identity = FileIdentity.from_stat(
-            os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
-        )
-    except FileNotFoundError:
-        return
-    if identity.object_key() == expected:
-        os.unlink(name, dir_fd=directory_descriptor)
+def _invalidate_result(descriptor: int) -> None:
+    os.ftruncate(descriptor, 0)
+    os.fsync(descriptor)
 
 
 def _verify_entry_identity(

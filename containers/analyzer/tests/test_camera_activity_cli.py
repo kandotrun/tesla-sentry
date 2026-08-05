@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from unittest.mock import patch
 
-from sentry_analyzer.back_impact_io import InputHandle, OutputHandle
+from sentry_analyzer.back_impact_io import TEMPORARY_NAME, InputHandle, OutputHandle
 from sentry_analyzer.back_impact_probe import JsonValue, MediaIssue
 from sentry_analyzer.camera_activity import CAMERA_ACTIVITY_ORDER, KnownCamera
 from sentry_analyzer.camera_activity_cli import (
@@ -163,6 +163,9 @@ class CameraActivityCliTests(unittest.TestCase):
             stored = json.loads((output_root / "result.json").read_text())
             self.assertEqual(stored, result.to_dict())
             self.assertEqual(stat.S_IMODE((output_root / "result.json").stat().st_mode), 0o600)
+            anchor = output_root / TEMPORARY_NAME
+            self.assertEqual(anchor.read_bytes(), (output_root / "result.json").read_bytes())
+            self.assertEqual(anchor.stat().st_ino, (output_root / "result.json").stat().st_ino)
 
     def test_execute_rejects_distinct_paths_to_the_same_file(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -217,6 +220,7 @@ class CameraActivityCliTests(unittest.TestCase):
                 )
 
             self.assertFalse((output_root / "result.json").exists())
+            self.assertEqual((output_root / TEMPORARY_NAME).read_bytes(), b"")
 
     def test_one_media_failure_makes_aggregate_indeterminate_without_activity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

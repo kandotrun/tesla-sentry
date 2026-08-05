@@ -219,7 +219,8 @@ class BackImpactCliTests(unittest.TestCase):
                 )
 
             self.assertFalse((output_root / "result.json").exists())
-            self.assertFalse((detached_output / "result.json").exists())
+            self.assertEqual((detached_output / "result.json").read_bytes(), b"")
+            self.assertEqual((detached_output / TEMPORARY_NAME).read_bytes(), b"")
 
     def test_result_mutation_during_publication_rolls_back_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -262,7 +263,8 @@ class BackImpactCliTests(unittest.TestCase):
                     FakeMedia(impact_frames()),
                 )
 
-            self.assertFalse((output_root / "result.json").exists())
+            self.assertEqual((output_root / "result.json").read_bytes(), b"")
+            self.assertEqual((output_root / TEMPORARY_NAME).read_bytes(), b"")
 
     def test_late_final_entry_is_not_replaced(self) -> None:
         def run(entry_type: str) -> None:
@@ -301,7 +303,7 @@ class BackImpactCliTests(unittest.TestCase):
                 metadata = entry.lstat()
                 value = entry.read_bytes() if entry_type == "regular" else os.readlink(entry)
                 self.assertEqual((metadata.st_ino, metadata.st_mtime_ns, value), before[0])
-                self.assertFalse((output_root / TEMPORARY_NAME).exists())
+                self.assertEqual((output_root / TEMPORARY_NAME).read_bytes(), b"")
 
         for entry_type in ("regular", "dangling"):
             with self.subTest(entry_type=entry_type):
