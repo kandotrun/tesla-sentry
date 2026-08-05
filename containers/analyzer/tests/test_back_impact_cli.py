@@ -182,6 +182,45 @@ class BackImpactCliTests(unittest.TestCase):
             self.assertFalse((output_root / "result.json").exists())
             self.assertFalse((root / "old-output/result.json").exists())
 
+    def test_output_swap_during_publication_rolls_back_detached_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root, output_root = self.roots(root)
+            detached_output = root / "detached-output"
+            link = os.link
+
+            def swap_then_link(
+                src: str,
+                dst: str,
+                *,
+                src_dir_fd: int | None = None,
+                dst_dir_fd: int | None = None,
+                follow_symlinks: bool = True,
+            ) -> None:
+                output_root.rename(detached_output)
+                output_root.mkdir()
+                link(
+                    src,
+                    dst,
+                    src_dir_fd=src_dir_fd,
+                    dst_dir_fd=dst_dir_fd,
+                    follow_symlinks=follow_symlinks,
+                )
+
+            with (
+                patch("sentry_analyzer.back_impact_io.os.link", swap_then_link),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    BackImpactRequest("back-001", "back.mp4"),
+                    input_root,
+                    output_root,
+                    FakeMedia(impact_frames()),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
+            self.assertFalse((detached_output / "result.json").exists())
+
     def test_late_final_entry_is_not_replaced(self) -> None:
         def run(entry_type: str) -> None:
             with tempfile.TemporaryDirectory() as directory:

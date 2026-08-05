@@ -7,8 +7,9 @@ import tempfile
 import unittest
 from collections.abc import Iterable
 from pathlib import Path
+from unittest.mock import patch
 
-from sentry_analyzer.back_impact_io import InputHandle
+from sentry_analyzer.back_impact_io import InputHandle, OutputHandle
 from sentry_analyzer.back_impact_probe import JsonValue, MediaIssue
 from sentry_analyzer.camera_activity import CAMERA_ACTIVITY_ORDER, KnownCamera
 from sentry_analyzer.camera_activity_cli import (
@@ -185,6 +186,37 @@ class CameraActivityCliTests(unittest.TestCase):
                 )
 
             self.assertFalse(output_root.exists())
+
+    def test_input_mutation_during_result_publication_rolls_back_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_root = root / "input"
+            for camera in CAMERA_ACTIVITY_ORDER:
+                path = input_root / "event" / f"{camera}.mp4"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"media")
+            output_root = root / "output"
+            verify_attached = OutputHandle.verify_attached
+            calls: list[None] = []
+
+            def mutate_after_verification(handle: OutputHandle) -> None:
+                verify_attached(handle)
+                calls.append(None)
+                if len(calls) == 3:
+                    (input_root / "event/front.mp4").write_bytes(b"late-mutation")
+
+            with (
+                patch.object(OutputHandle, "verify_attached", mutate_after_verification),
+                self.assertRaises(OSError),
+            ):
+                execute_request(
+                    parse_request(request_payload()),
+                    input_root,
+                    output_root,
+                    lambda camera: FakeMedia(camera),
+                )
+
+            self.assertFalse((output_root / "result.json").exists())
 
     def test_one_media_failure_makes_aggregate_indeterminate_without_activity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

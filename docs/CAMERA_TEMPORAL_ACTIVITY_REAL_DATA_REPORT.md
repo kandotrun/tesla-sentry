@@ -66,3 +66,17 @@
 時間変化producerは「当たっているかもしれない」候補を残すための補助証拠である。映像外、遮蔽、暗所、汚れ、圧縮破損、低contrast、短すぎるclipでは判定不能になり得る。no-signalは非接触または無損傷を保証しない。
 
 frontとpillarには直接の自車接触境界を置いていない。backも固定アンカーが未検証である。直接接触の確定は、測定済み左右repeater幾何と独立した補強証拠が揃う場合だけに限定する。
+
+## 入力同一性強化後の追加QA
+
+認可済みNAS上の別の6方向完全集合を、device・inode重複拒否と結果公開前後の入力同一性検証を含むproduction `execute_request`へread-only QA harnessから渡した。
+
+- 6入力のdevice・inode：6/6が相互に異なる
+- 解析前後のdevice、inode、size、mtime、ctime、mode不変：6/6
+- aggregate：`indeterminate`
+- 方向別activity：0/6
+- 方向別indeterminate：1/6
+- `result.json`のmode：`0600`
+- QA harness exit code：0
+
+この集合は接触イベントとしてラベル付けしていないため、接触精度の評価には使わない。1方向の解析不能をno-signalへ落とさず、aggregateに`indeterminate`として残せたことと、入力同一性・出力modeの運用境界だけを確認した。

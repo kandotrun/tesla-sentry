@@ -129,7 +129,7 @@ def execute_request(
         input_handle.verify_unchanged()
         output_handle.verify_attached()
         serialized = json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":"))
-        output_handle.write((serialized + "\n").encode())
+        output_handle.write((serialized + "\n").encode(), input_handle.verify_unchanged)
         return result
 
 

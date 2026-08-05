@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import stat
 import sys
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -81,12 +81,14 @@ class OutputHandle:
         if directory_identity.object_key() != expected or path_identity.object_key() != expected:
             raise OSError("output changed during analysis")
 
-    def write(self, payload: bytes) -> None:
+    def write(self, payload: bytes, verify_source: Callable[[], None]) -> None:
         self.verify_attached()
         if _entry_exists(self.directory_descriptor, TEMPORARY_NAME):
             raise FileExistsError("temporary result exists")
         if _entry_exists(self.directory_descriptor, FINAL_NAME):
             raise FileExistsError("final result exists")
+        final_created = False
+        temporary_identity: FileIdentity | None = None
         descriptor = os.open(
             TEMPORARY_NAME,
             WRITE_FLAGS,
@@ -99,6 +101,15 @@ class OutputHandle:
             os.close(descriptor)
             descriptor = -1
             self.verify_attached()
+            verify_source()
+            self.verify_attached()
+            temporary_identity = FileIdentity.from_stat(
+                os.stat(
+                    TEMPORARY_NAME,
+                    dir_fd=self.directory_descriptor,
+                    follow_symlinks=False,
+                )
+            )
             os.link(
                 TEMPORARY_NAME,
                 FINAL_NAME,
@@ -106,13 +117,37 @@ class OutputHandle:
                 dst_dir_fd=self.directory_descriptor,
                 follow_symlinks=False,
             )
+            final_created = True
+            self.verify_attached()
+            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
+            verify_source()
+            self.verify_attached()
+            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
             os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
             os.fsync(self.directory_descriptor)
+            self.verify_attached()
+            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
+            verify_source()
+            self.verify_attached()
+            _verify_entry_identity(self.directory_descriptor, FINAL_NAME, temporary_identity)
         except (OSError, TypeError, ValueError):
             if descriptor >= 0:
                 os.close(descriptor)
             with suppress(FileNotFoundError):
                 os.unlink(TEMPORARY_NAME, dir_fd=self.directory_descriptor)
+            if final_created and temporary_identity is not None:
+                with suppress(FileNotFoundError):
+                    final_identity = FileIdentity.from_stat(
+                        os.stat(
+                            FINAL_NAME,
+                            dir_fd=self.directory_descriptor,
+                            follow_symlinks=False,
+                        )
+                    )
+                    if final_identity.object_key() == temporary_identity.object_key():
+                        os.unlink(FINAL_NAME, dir_fd=self.directory_descriptor)
+            with suppress(OSError):
+                os.fsync(self.directory_descriptor)
             raise
 
 
@@ -122,6 +157,16 @@ def _entry_exists(directory_descriptor: int, name: str) -> bool:
     except FileNotFoundError:
         return False
     return True
+
+
+def _verify_entry_identity(
+    directory_descriptor: int,
+    name: str,
+    expected: FileIdentity,
+) -> None:
+    metadata = os.stat(name, dir_fd=directory_descriptor, follow_symlinks=False)
+    if FileIdentity.from_stat(metadata).object_key() != expected.object_key():
+        raise OSError("output changed during analysis")
 
 
 def _write_all(descriptor: int, payload: bytes) -> None:

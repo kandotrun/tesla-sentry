@@ -17,7 +17,7 @@ Model Y 2025+ Long RangeのTeslaCam 6方向について、カメラ近傍で接�
 5. `left_pillar`
 6. `right_pillar`
 
-重複clip ID、重複path、同一実ファイルへのalias、欠落、順序違い、未知方向、絶対path、`..`、symlink、解析中のleaf差し替えまたは同一inodeへの変更は拒否する。入力はread-onlyのfile descriptorで保持し、解析後にdevice、inode、size、mtime、ctimeを再検証する。
+重複clip ID、重複path、同一実ファイルへのalias、欠落、順序違い、未知方向、絶対path、`..`、symlink、解析中のleaf差し替えまたは同一inodeへの変更は拒否する。入力はread-onlyのfile descriptorで保持し、解析後と結果公開の直前・直後にdevice、inode、size、mtime、ctimeを再検証する。
 
 フロントはH.264、display 2896x1876、coded 2896x1888、crop `(0,12,0,0)`を要求する。他5方向はH.264、display 1448x938、coded 1456x944、crop `(0,6,0,8)`を要求する。rotationは0度、durationは3秒以上90秒以下、frame rateは1以上120以下とする。SPSと先頭frameのcropが両方ある場合は一致を要求する。
 
@@ -63,4 +63,6 @@ aggregateは固定6 keyを持ち、camera配列は入力と同じ固定順であ
 
 ## CLI
 
-`python -m sentry_analyzer.camera_activity_cli --request request.json --input-root INPUT --output-root OUTPUT`で実行する。成功したactivity/no-signalはexit 0、aggregate indeterminateはexit 3、request違反はexit 2、処理境界の失敗はexit 5である。`result.json`は空のoutput directoryへmode `0600`で原子的に公開する。
+`python -m sentry_analyzer.camera_activity_cli --request request.json --input-root INPUT --output-root OUTPUT`で実行する。成功したactivity/no-signalはexit 0、aggregate indeterminateはexit 3、request違反はexit 2、処理境界の失敗はexit 5である。`result.json`は空のoutput directoryへmode `0600`で原子的に公開する。公開の直前・直後に6入力とoutput directoryの同一性を照合し、競合を検出した場合は自身が公開した結果を保持中のdirectory descriptorからロールバックして失敗する。
+
+metadata checkpointは非協調writerに対する連続的なcontent不変性を証明しない。productionで強い完全性が必要な場合は、immutable snapshotまたはstorage versionへ入力を固定し、leaseまたは信頼境界でのcontent hash検証を併用する。

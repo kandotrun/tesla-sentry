@@ -145,6 +145,11 @@ def _analyze(
         )
 
 
+def _verify_inputs(handles: tuple[InputHandle, ...]) -> None:
+    for handle in handles:
+        handle.verify_unchanged()
+
+
 def execute_request(
     request: CameraActivityRequest,
     input_root: Path,
@@ -166,12 +171,11 @@ def execute_request(
             _analyze(item, handle, media_factory(item.camera))
             for item, handle in zip(request.cameras, handles, strict=True)
         )
-        for handle in handles:
-            handle.verify_unchanged()
+        _verify_inputs(handles)
         output_handle.verify_attached()
         result = aggregate_camera_activity(request.event_id, results)
         serialized = json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":"))
-        output_handle.write((serialized + "\n").encode())
+        output_handle.write((serialized + "\n").encode(), lambda: _verify_inputs(handles))
         return result
 
 

@@ -1,6 +1,6 @@
 # Project Context
 
-更新：2026-08-05 JST
+更新：2026-08-06 JST
 
 ## 目的
 
@@ -143,6 +143,8 @@ Webの`App`は任意の`analysisVerdict`を`ContactVerdictPanel`へ渡せる。�
 確認済み接触窓1/1件は検出し、比較窓7/7件は検出しなかった。同時刻の6方向窓ではbackだけが持続条件を満たした。これは1正例と7比較例による閾値校正で、独立blind holdoutを持たないためaccuracy、precision、recallではない。
 
 全長の同一実イベント6本を新CLIへ直接渡したread-only確認では6/6を解析し、aggregateは`activity_detected`、方向別では2/6がactivity、0/6がindeterminateだった。全長clipの接触窓以外には正解ラベルがないため、追加のactivityを誤検知とは扱わない。元映像6/6のsize、mtime、modeは不変だった。
+
+入力同一性強化後の別の認可済みNAS完全集合では、6入力のdevice・inodeが6/6で相互に異なり、解析前後のdevice、inode、size、mtime、ctime、modeが6/6で不変だった。方向別では1/6を`indeterminate`として保持し、aggregateも`indeterminate`へfail-closedした。この集合には接触ラベルがないため精度評価には使わない。
 
 詳細は[6方向時間変化解析契約](CAMERA_TEMPORAL_ACTIVITY_CONTRACT.md)と[実データ校正レポート](CAMERA_TEMPORAL_ACTIVITY_REAL_DATA_REPORT.md)に記録する。
 
