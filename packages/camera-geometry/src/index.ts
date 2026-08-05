@@ -1,4 +1,10 @@
 export { isBackImpactEvidence, parseBackImpactEvidence } from "./back-impact-evidence";
+export {
+  isCameraActivityEventEvidence,
+  isCameraActivityEvidence,
+  parseCameraActivityEvidence,
+} from "./camera-activity-evidence";
+export { classifyContactEventWithCameraActivity } from "./classify-camera-activity";
 export { classifyContactEvent } from "./classify-event";
 export { evaluateFrameGeometry } from "./evaluate-frame";
 export { matchVehicleCameraProfileV2 } from "./match-profile";
@@ -13,6 +19,13 @@ export type {
   BackImpactEvidence,
   BackImpactIssue,
   BackImpactMetrics,
+  CameraActivityCamera,
+  CameraActivityDirectionEvidence,
+  CameraActivityEventEvidence,
+  CameraActivityEvidence,
+  CameraActivityIssue,
+  CameraActivityMetrics,
+  CameraActivityStatus,
   CameraProfileV2,
   CameraRecordingDescriptor,
   ContactCameraProfileV2,

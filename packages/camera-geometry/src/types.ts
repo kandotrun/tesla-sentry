@@ -52,6 +52,63 @@ export type BackImpactEvidence =
       readonly status: "indeterminate";
     });
 
+export type CameraActivityCamera = KnownTeslaCamera;
+
+export type CameraActivityIssue = BackImpactIssue;
+
+export type CameraActivityStatus =
+  | "activity_detected"
+  | "no_activity_signal_observed"
+  | "indeterminate";
+
+export interface CameraActivityMetrics {
+  readonly changedPixelRatio: number;
+  readonly gradientChangeRatio: number;
+  readonly nearCameraScore: number;
+  readonly qualifyingSamples: number;
+}
+
+interface CameraActivityDirectionBase {
+  readonly analysisDurationMs: number;
+  readonly analyzedFrames: number;
+  readonly analyzerVersion: "camera-temporal-activity-v1";
+  readonly camera: CameraActivityCamera;
+  readonly clipId: string;
+  readonly schemaVersion: 1;
+  readonly source: "camera_temporal_activity";
+}
+
+export type CameraActivityDirectionEvidence =
+  | (CameraActivityDirectionBase & {
+      readonly candidateTimestampMs: number;
+      readonly issues: readonly [];
+      readonly metrics: CameraActivityMetrics;
+      readonly status: "activity_detected";
+    })
+  | (CameraActivityDirectionBase & {
+      readonly candidateTimestampMs: null;
+      readonly issues: readonly [];
+      readonly metrics: CameraActivityMetrics;
+      readonly status: "no_activity_signal_observed";
+    })
+  | (CameraActivityDirectionBase & {
+      readonly candidateTimestampMs: null;
+      readonly issues: NonEmpty<CameraActivityIssue>;
+      readonly metrics: null;
+      readonly status: "indeterminate";
+    });
+
+export interface CameraActivityEventEvidence {
+  readonly analyzerVersion: "camera-temporal-activity-v1";
+  readonly cameras: readonly CameraActivityDirectionEvidence[];
+  readonly eventId: string;
+  readonly schemaVersion: 1;
+  readonly source: "camera_temporal_activity";
+  readonly status: CameraActivityStatus;
+}
+
+export type CameraActivityEvidence = CameraActivityDirectionEvidence | CameraActivityEventEvidence;
+
 export interface NormalizedPoint {
   readonly x: number;
   readonly y: number;
@@ -196,6 +253,7 @@ export type ContactCoverage =
 export type IndeterminateReason =
   | "back_impact_analysis_unavailable"
   | "boundary_occluded"
+  | "camera_activity_analysis_unavailable"
   | "conflicting_evidence"
   | "entered_blind_zone"
   | "insufficient_camera_coverage"
@@ -225,7 +283,9 @@ export interface ContactEventEvidence {
 export type ContactVerdict =
   | { readonly reasons: readonly []; readonly verdict: "contact" }
   | {
-      readonly reasons: readonly ["back_temporal_impact_signal"];
+      readonly reasons: readonly [
+        "back_temporal_impact_signal" | "camera_temporal_activity_signal",
+      ];
       readonly verdict: "possible_contact";
     }
   | { readonly reasons: readonly []; readonly verdict: "no_contact_observed" }

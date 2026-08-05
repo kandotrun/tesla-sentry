@@ -25,6 +25,18 @@ describe("ContactVerdictPanel", () => {
     expect(screen.queryByText(/接触しました|損傷があります/)).not.toBeInTheDocument();
   });
 
+  it("explains that all-camera temporal activity is not confirmed contact", () => {
+    renderPanel({ reasons: ["camera_temporal_activity_signal"], verdict: "possible_contact" });
+
+    expect(screen.getByRole("heading", { name: "接触の可能性があります" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "カメラ映像で接触の可能性につながる時間変化を検出しました。接触を確定する結果ではありません。映像を確認してください。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/接触しました|損傷があります/)).not.toBeInTheDocument();
+  });
+
   it("shows the stricter direct-geometry contact finding with an alert modifier", () => {
     renderPanel({ reasons: [], verdict: "contact" });
 
