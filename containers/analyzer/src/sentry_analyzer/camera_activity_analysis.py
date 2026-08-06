@@ -32,15 +32,44 @@ def analyze_camera_frames(
             None,
             "indeterminate",
         )
-    sample = detector.candidate or detector.best_sample
+    motion_candidate = detector.candidate
+    occlusion_candidate = detector.occlusion_candidate
+    if motion_candidate is not None and occlusion_candidate is not None:
+        motion_ts = detector.candidate_timestamp_ms
+        occlusion_ts = detector.occlusion_candidate_timestamp_ms
+        if (
+            motion_ts is not None
+            and occlusion_ts is not None
+            and abs(motion_ts - occlusion_ts) > 500
+        ) or occlusion_candidate.occlusion_score < 0.90:
+            motion_candidate = None
+            occlusion_candidate = None
+    elif (
+        motion_candidate is not None
+        and detector.occlusion_qualifying_samples > 0
+        and motion_candidate.occlusion_score < 0.30
+    ):
+        motion_candidate = None
+    elif (
+        occlusion_candidate is not None
+        and detector.qualifying_samples > 0
+        and occlusion_candidate.near_camera_score < 0.30
+    ):
+        occlusion_candidate = None
+    selected = motion_candidate or occlusion_candidate
+    sample = selected or detector.best_sample
+    occlusion = detector.best_occlusion_sample
     metrics = CameraActivityMetrics(
         sample.changed_pixel_ratio,
         sample.gradient_change_ratio,
         sample.near_camera_score,
         detector.qualifying_samples,
+        occlusion.flat_ratio,
+        detector.occlusion_qualifying_samples,
+        occlusion.occlusion_score,
     )
-    if detector.candidate is not None:
-        candidate_timestamp = detector.candidate.timestamp_ms - summary.analysis_start_ms
+    if selected is not None:
+        candidate_timestamp = selected.timestamp_ms - summary.analysis_start_ms
         return CameraActivityResult(
             summary.duration_ms,
             summary.analyzed_frames,

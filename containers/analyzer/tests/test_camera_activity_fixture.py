@@ -27,6 +27,9 @@ class CameraActivityFixtureTests(unittest.TestCase):
                     0.08 if camera == "back" else 0.03,
                     0.75 if camera == "back" else 0.25,
                     2 if camera == "back" else 0,
+                    0.55 if camera == "back" else 0.0,
+                    2 if camera == "back" else 0,
+                    0.75 if camera == "back" else 0.25,
                 ),
                 "activity_detected" if camera == "back" else "no_activity_signal_observed",
             )
@@ -36,7 +39,7 @@ class CameraActivityFixtureTests(unittest.TestCase):
         serialized = json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")) + "\n"
         fixture = (
             Path(__file__).resolve().parents[3]
-            / "packages/camera-geometry/tests/fixtures/camera-temporal-activity-v1.json"
+            / "packages/camera-geometry/tests/fixtures/camera-temporal-activity-v2.json"
         )
 
         self.assertEqual(serialized.encode(), fixture.read_bytes())

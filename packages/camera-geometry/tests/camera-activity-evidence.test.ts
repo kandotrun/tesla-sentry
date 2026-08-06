@@ -19,7 +19,7 @@ function direction(camera: CameraActivityCamera, status = "no_activity_signal_ob
   return {
     analysisDurationMs: 4_000,
     analyzedFrames: 32,
-    analyzerVersion: "camera-temporal-activity-v1",
+    analyzerVersion: "camera-temporal-activity-v2",
     camera,
     candidateTimestampMs: status === "activity_detected" ? 1_500 : null,
     clipId: `${camera}-001`,
@@ -31,6 +31,9 @@ function direction(camera: CameraActivityCamera, status = "no_activity_signal_ob
             changedPixelRatio: 0.06,
             gradientChangeRatio: 0.08,
             nearCameraScore: status === "activity_detected" ? 0.75 : 0.3,
+            occlusionFlatRatio: status === "activity_detected" ? 0.55 : 0,
+            occlusionQualifyingSamples: status === "activity_detected" ? 2 : 0,
+            occlusionScore: status === "activity_detected" ? 0.75 : 0,
             qualifyingSamples: status === "activity_detected" ? 2 : 0,
           },
     schemaVersion: 1,
@@ -41,7 +44,7 @@ function direction(camera: CameraActivityCamera, status = "no_activity_signal_ob
 
 function event(status = "no_activity_signal_observed") {
   return {
-    analyzerVersion: "camera-temporal-activity-v1",
+    analyzerVersion: "camera-temporal-activity-v2",
     cameras: ORDER.map((camera) =>
       direction(
         camera,
@@ -62,7 +65,7 @@ function event(status = "no_activity_signal_observed") {
 describe("parseCameraActivityEvidence", () => {
   it("accepts the exact Python cross-language fixture", () => {
     const fixture = JSON.parse(
-      readFileSync(new URL("./fixtures/camera-temporal-activity-v1.json", import.meta.url), "utf8"),
+      readFileSync(new URL("./fixtures/camera-temporal-activity-v2.json", import.meta.url), "utf8"),
     );
 
     expect(parseCameraActivityEvidence(fixture)).toEqual(fixture);
@@ -109,6 +112,9 @@ describe("parseCameraActivityEvidence", () => {
     const invalid = [
       { ...active, metrics: { ...active.metrics, nearCameraScore: Number.NaN } },
       { ...active, metrics: { ...active.metrics, qualifyingSamples: -1 } },
+      { ...active, metrics: { ...active.metrics, occlusionFlatRatio: Number.NaN } },
+      { ...active, metrics: { ...active.metrics, occlusionScore: 1.2 } },
+      { ...active, metrics: { ...active.metrics, occlusionQualifyingSamples: -1 } },
       { ...active, candidateTimestampMs: 4_001 },
       { ...active, issues: ["low_visibility"] },
       { ...active, metrics: null },

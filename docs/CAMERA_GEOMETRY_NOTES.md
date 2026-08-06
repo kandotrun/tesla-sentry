@@ -121,7 +121,7 @@ rear-only、front-only、pillar-onlyの候補も、直接カメラへ解決で�
 
 有効なrepeater直接証拠による`contact`を`possible_contact`より優先する。back signalだけで`contact`を返さず、`possible_contact`を`no_contact_observed`へ落とさない。
 
-6方向の`camera-temporal-activity-v1`は、固定camera roleごとに短時間の画素差とgradient変化が持続した場合を別の`possible_contact`証拠にする。front、back、左右pillar、左右repeaterのどの方向でもactivity候補を残せるが、この時間変化だけでは`contact`へ昇格しない。
+6方向の`camera-temporal-activity-v2`は、固定camera roleごとに短時間の画素差とgradient変化が持続した場合(motion channel)、または平らな物体がレンズ近傍を覆うocclusion変化が持続した場合(occlusion channel)を別の`possible_contact`証拠にする。front、back、左右pillar、左右repeaterのどの方向でもactivity候補を残せるが、この時間変化だけでは`contact`へ昇格しない。
 
 有効な6方向aggregateで1方向でもactivityなら`camera_temporal_activity_signal`を返す。全6方向がno-signalの場合は既存の幾何判定を維持し、no-signalだけから車両全体の非接触を作らない。aggregateがinvalidまたはindeterminateで、既存のcontact/possible-contactがない場合は`camera_activity_analysis_unavailable`へ閉じる。
 

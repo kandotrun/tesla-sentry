@@ -65,13 +65,16 @@ export interface CameraActivityMetrics {
   readonly changedPixelRatio: number;
   readonly gradientChangeRatio: number;
   readonly nearCameraScore: number;
+  readonly occlusionFlatRatio: number;
+  readonly occlusionQualifyingSamples: number;
+  readonly occlusionScore: number;
   readonly qualifyingSamples: number;
 }
 
 interface CameraActivityDirectionBase {
   readonly analysisDurationMs: number;
   readonly analyzedFrames: number;
-  readonly analyzerVersion: "camera-temporal-activity-v1";
+  readonly analyzerVersion: "camera-temporal-activity-v2";
   readonly camera: CameraActivityCamera;
   readonly clipId: string;
   readonly schemaVersion: 1;
@@ -99,7 +102,7 @@ export type CameraActivityDirectionEvidence =
     });
 
 export interface CameraActivityEventEvidence {
-  readonly analyzerVersion: "camera-temporal-activity-v1";
+  readonly analyzerVersion: "camera-temporal-activity-v2";
   readonly cameras: readonly CameraActivityDirectionEvidence[];
   readonly eventId: string;
   readonly schemaVersion: 1;

@@ -26,3 +26,4 @@ select = ["B", "BLE", "DTZ", "E", "F", "I", "RUF", "SIM", "UP"]
 # TeslaCam filenames contain event-local wall time without an offset. Only relative deltas are used.
 "src/sentry_analyzer/preprocess.py" = ["DTZ007"]
 "tests/test_back_impact_media.py" = ["E402"]
+"tests/fixtures/*.json" = ["B018", "F821"]

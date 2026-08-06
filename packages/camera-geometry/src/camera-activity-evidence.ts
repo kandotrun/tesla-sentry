@@ -36,6 +36,9 @@ const METRICS_KEYS = [
   "changedPixelRatio",
   "gradientChangeRatio",
   "nearCameraScore",
+  "occlusionFlatRatio",
+  "occlusionQualifyingSamples",
+  "occlusionScore",
   "qualifyingSamples",
 ] as const;
 
@@ -112,6 +115,9 @@ function isMetrics(value: unknown): value is CameraActivityMetrics {
     isNormalizedScore(value.changedPixelRatio) &&
     isNormalizedScore(value.gradientChangeRatio) &&
     isNormalizedScore(value.nearCameraScore) &&
+    isNormalizedScore(value.occlusionFlatRatio) &&
+    isSafeNonNegativeInteger(value.occlusionQualifyingSamples) &&
+    isNormalizedScore(value.occlusionScore) &&
     isSafeNonNegativeInteger(value.qualifyingSamples)
   );
 }
@@ -124,7 +130,7 @@ function hasValidDirectionBase(value: Readonly<Record<string, unknown>>): boolea
   return (
     isSafeNonNegativeInteger(value.analysisDurationMs) &&
     isSafeNonNegativeInteger(value.analyzedFrames) &&
-    value.analyzerVersion === "camera-temporal-activity-v1" &&
+    value.analyzerVersion === "camera-temporal-activity-v2" &&
     isCamera(value.camera) &&
     typeof value.clipId === "string" &&
     SAFE_IDENTIFIER.test(value.clipId) &&
@@ -177,7 +183,7 @@ export function isCameraActivityEventEvidence(
   if (
     !isRecord(value) ||
     !hasExactKeys(value, EVENT_KEYS) ||
-    value.analyzerVersion !== "camera-temporal-activity-v1" ||
+    value.analyzerVersion !== "camera-temporal-activity-v2" ||
     typeof value.eventId !== "string" ||
     !SAFE_IDENTIFIER.test(value.eventId) ||
     value.schemaVersion !== 1 ||
