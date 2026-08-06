@@ -17,6 +17,8 @@ OCCLUSION_FLAT_REFERENCE: Final = 0.50
 OCCLUSION_SCORE_THRESHOLD: Final = 0.50
 MIN_OCCLUSION_CHANGED_RATIO: Final = 0.04
 MAX_OCCLUSION_CHANGED_RATIO: Final = 0.80
+MAX_OCCLUSION_QUALIFYING_SAMPLES: Final = 10
+MAX_OCCLUSION_CANDIDATE_BBOX_RATIO: Final = 0.60
 MIN_FLAT_RATIO: Final = 0.40
 MAX_BBOX_RATIO: Final = 0.85
 
@@ -108,8 +110,10 @@ class NearCameraActivityDetector:
         self.best_sample = NearCameraSample(0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         self.best_occlusion_sample = NearCameraSample(0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
         self.candidate: NearCameraSample | None = None
+        self.candidate_timestamp_ms: int | None = None
         self.qualifying_samples = 0
         self.occlusion_candidate: NearCameraSample | None = None
+        self.occlusion_candidate_timestamp_ms: int | None = None
         self.occlusion_qualifying_samples = 0
 
     def observe(self, timestamp_ms: int, previous: bytes, current: bytes) -> None:
@@ -129,23 +133,31 @@ class NearCameraActivityDetector:
             self.qualifying_samples += 1
         if sample.occlusion_score >= OCCLUSION_SCORE_THRESHOLD:
             self.occlusion_qualifying_samples += 1
-        motion_qualifiers = tuple(
-            item for item in self.window if item.near_camera_score >= ACTIVITY_THRESHOLD
-        )
-        if len(motion_qualifiers) >= MINIMUM_QUALIFYING_SAMPLES:
-            window_candidate = max(motion_qualifiers, key=lambda item: item.near_camera_score)
-            if (
-                self.candidate is None
-                or window_candidate.near_camera_score > self.candidate.near_camera_score
-            ):
-                self.candidate = window_candidate
-        occlusion_qualifiers = tuple(
-            item for item in self.window if item.occlusion_score >= OCCLUSION_SCORE_THRESHOLD
-        )
-        if len(occlusion_qualifiers) >= MINIMUM_QUALIFYING_SAMPLES:
-            window_candidate = max(occlusion_qualifiers, key=lambda item: item.occlusion_score)
-            if (
-                self.occlusion_candidate is None
-                or window_candidate.occlusion_score > self.occlusion_candidate.occlusion_score
-            ):
-                self.occlusion_candidate = window_candidate
+        if self.occlusion_qualifying_samples > MAX_OCCLUSION_QUALIFYING_SAMPLES:
+            self.candidate = None
+            self.candidate_timestamp_ms = None
+            self.occlusion_candidate = None
+            self.occlusion_candidate_timestamp_ms = None
+        else:
+            motion_qualifiers = tuple(
+                item for item in self.window if item.near_camera_score >= ACTIVITY_THRESHOLD
+            )
+            if len(motion_qualifiers) >= MINIMUM_QUALIFYING_SAMPLES:
+                window_candidate = max(motion_qualifiers, key=lambda item: item.near_camera_score)
+                if (
+                    self.candidate is None
+                    or window_candidate.near_camera_score > self.candidate.near_camera_score
+                ):
+                    self.candidate = window_candidate
+                    self.candidate_timestamp_ms = window_candidate.timestamp_ms
+            occlusion_qualifiers = tuple(
+                item for item in self.window if item.occlusion_score >= OCCLUSION_SCORE_THRESHOLD
+            )
+            if len(occlusion_qualifiers) >= MINIMUM_QUALIFYING_SAMPLES:
+                window_candidate = max(occlusion_qualifiers, key=lambda item: item.occlusion_score)
+                if window_candidate.bbox_ratio <= MAX_OCCLUSION_CANDIDATE_BBOX_RATIO and (
+                    self.occlusion_candidate is None
+                    or window_candidate.occlusion_score > self.occlusion_candidate.occlusion_score
+                ):
+                    self.occlusion_candidate = window_candidate
+                    self.occlusion_candidate_timestamp_ms = window_candidate.timestamp_ms

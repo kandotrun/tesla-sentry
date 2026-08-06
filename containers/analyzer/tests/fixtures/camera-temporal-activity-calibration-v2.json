@@ -1,1 +1,141 @@
-{"analyzerVersion":"camera-temporal-activity-v2","calibrationVersion":"camera-temporal-activity-calibration-v2","confirmedTouchWindows":{"detected":1,"total":1},"comparisonWindows":{"detected":0,"total":7},"independentBlindHoldout":false,"synchronizedSixCameraWindowAvailable":false,"thresholds":{"motion":{"changedPixelDifference":72,"changedPixelReference":0.08,"gradientDifference":64,"gradientReference":0.1,"minimumNearCameraScore":0.7,"minimumQualifyingSamples":2,"transitionWindow":4},"occlusion":{"changedPixelDifference":72,"flatGradientThreshold":40,"minimumChangedPixelRatio":0.04,"maximumChangedPixelRatio":0.8,"changedPixelReference":0.08,"minimumFlatRatio":0.4,"flatRatioReference":0.5,"maximumBboxRatio":0.85,"minimumOcclusionScore":0.5,"minimumQualifyingSamples":2,"transitionWindow":4}},"windows":[{"window":"confirmed-touch","status":"activity_detected","motionQualifyingSamples":5,"maximumNearCameraScore":0.748948,"occlusionQualifyingSamples":6,"maximumOcclusionScore":1,"maximumOcclusionFlatRatio":0.559666},{"window":"comparison-01","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.223107,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-02","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.217849,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-03","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.675331,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-04","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.573918,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-05","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.277945,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-06","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.094651,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0},{"window":"comparison-07","status":"no_activity_signal_observed","motionQualifyingSamples":0,"maximumNearCameraScore":0.200571,"occlusionQualifyingSamples":0,"maximumOcclusionScore":0,"maximumOcclusionFlatRatio":0}]}
+{
+  "analyzerVersion": "camera-temporal-activity-v2",
+  "calibrationVersion": "camera-temporal-activity-calibration-v2",
+  "confirmedTouchWindows": {
+    "detected": 1,
+    "total": 1
+  },
+  "comparisonWindows": {
+    "detected": 0,
+    "total": 7
+  },
+  "independentBlindHoldout": false,
+  "synchronizedSixCameraWindowAvailable": false,
+  "thresholds": {
+    "motion": {
+      "changedPixelDifference": 72,
+      "changedPixelReference": 0.08,
+      "gradientDifference": 64,
+      "gradientReference": 0.1,
+      "minimumNearCameraScore": 0.7,
+      "minimumQualifyingSamples": 2,
+      "transitionWindow": 4
+    },
+    "occlusion": {
+      "changedPixelDifference": 72,
+      "flatGradientThreshold": 40,
+      "minimumChangedPixelRatio": 0.04,
+      "maximumChangedPixelRatio": 0.8,
+      "changedPixelReference": 0.08,
+      "minimumFlatRatio": 0.4,
+      "flatRatioReference": 0.5,
+      "maximumBboxRatio": 0.85,
+      "minimumOcclusionScore": 0.5,
+      "minimumQualifyingSamples": 2,
+      "transitionWindow": 4,
+      "maxOcclusionQualifyingSamples": 10,
+      "maxOcclusionCandidateBboxRatio": 0.6
+    },
+    "crossChannel": {
+      "maxTimeSeparationMs": 500,
+      "minDualChannelOcclusionScore": 0.9,
+      "minSingleChannelCrossScore": 0.3
+    }
+  },
+  "windows": [
+    {
+      "window": "confirmed-touch",
+      "status": "activity_detected",
+      "motionQualifyingSamples": 5,
+      "maximumNearCameraScore": 0.748948,
+      "occlusionQualifyingSamples": 6,
+      "maximumOcclusionScore": 1,
+      "maximumOcclusionFlatRatio": 0.559666
+    },
+    {
+      "window": "comparison-01",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.223107,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-02",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.217849,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-03",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.675331,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-04",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.573918,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-05",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.277945,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-06",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.094651,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "comparison-07",
+      "status": "no_activity_signal_observed",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.200571,
+      "occlusionQualifyingSamples": 0,
+      "maximumOcclusionScore": 0,
+      "maximumOcclusionFlatRatio": 0
+    },
+    {
+      "window": "near-miss-01",
+      "status": "activity_detected",
+      "motionQualifyingSamples": 2,
+      "maximumNearCameraScore": 0.858774,
+      "occlusionQualifyingSamples": 8,
+      "maximumOcclusionScore": 1.0,
+      "maximumOcclusionFlatRatio": 0.559666
+    },
+    {
+      "window": "near-miss-02",
+      "status": "activity_detected",
+      "motionQualifyingSamples": 0,
+      "maximumNearCameraScore": 0.648424,
+      "occlusionQualifyingSamples": 7,
+      "maximumOcclusionScore": 1.0,
+      "maximumOcclusionFlatRatio": 0.559666
+    }
+  ],
+  "nearMissWindows": {
+    "detected": 2,
+    "total": 2
+  }
+}

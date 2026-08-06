@@ -32,7 +32,31 @@ def analyze_camera_frames(
             None,
             "indeterminate",
         )
-    selected = detector.candidate or detector.occlusion_candidate
+    motion_candidate = detector.candidate
+    occlusion_candidate = detector.occlusion_candidate
+    if motion_candidate is not None and occlusion_candidate is not None:
+        motion_ts = detector.candidate_timestamp_ms
+        occlusion_ts = detector.occlusion_candidate_timestamp_ms
+        if (
+            motion_ts is not None
+            and occlusion_ts is not None
+            and abs(motion_ts - occlusion_ts) > 500
+        ) or occlusion_candidate.occlusion_score < 0.90:
+            motion_candidate = None
+            occlusion_candidate = None
+    elif (
+        motion_candidate is not None
+        and detector.occlusion_qualifying_samples > 0
+        and motion_candidate.occlusion_score < 0.30
+    ):
+        motion_candidate = None
+    elif (
+        occlusion_candidate is not None
+        and detector.qualifying_samples > 0
+        and occlusion_candidate.near_camera_score < 0.30
+    ):
+        occlusion_candidate = None
+    selected = motion_candidate or occlusion_candidate
     sample = selected or detector.best_sample
     occlusion = detector.best_occlusion_sample
     metrics = CameraActivityMetrics(

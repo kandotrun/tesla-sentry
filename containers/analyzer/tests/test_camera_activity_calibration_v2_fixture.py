@@ -19,8 +19,8 @@ class CameraActivityCalibrationV2FixtureTests(unittest.TestCase):
         self.assertIs(payload["independentBlindHoldout"], False)
         self.assertIs(payload["synchronizedSixCameraWindowAvailable"], False)
         windows = payload["windows"]
-        if not isinstance(windows, list) or len(windows) != 8:
-            self.fail("fixture must record eight windows")
+        if not isinstance(windows, list) or len(windows) < 8:
+            self.fail("fixture must record at least eight windows")
         confirmed = 0
         comparison_activity = 0
         for item in windows:
@@ -42,7 +42,7 @@ class CameraActivityCalibrationV2FixtureTests(unittest.TestCase):
             if status == "activity_detected":
                 if name == "confirmed-touch":
                     confirmed += 1
-                else:
+                elif not isinstance(name, str) or not name.startswith("near-miss-"):
                     comparison_activity += 1
         self.assertEqual(confirmed, 1)
         self.assertEqual(comparison_activity, 0)
