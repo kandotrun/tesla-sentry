@@ -13,11 +13,11 @@ const ORDER = [
 
 function aggregate(status: "activity_detected" | "no_activity_signal_observed" | "indeterminate") {
   return {
-    analyzerVersion: "camera-temporal-activity-v1",
+    analyzerVersion: "camera-temporal-activity-v2",
     cameras: ORDER.map((camera) => ({
       analysisDurationMs: status === "indeterminate" && camera === "back" ? 0 : 4_000,
       analyzedFrames: status === "indeterminate" && camera === "back" ? 0 : 32,
-      analyzerVersion: "camera-temporal-activity-v1",
+      analyzerVersion: "camera-temporal-activity-v2",
       camera,
       candidateTimestampMs: status === "activity_detected" && camera === "back" ? 1_500 : null,
       clipId: `${camera}-001`,
@@ -29,6 +29,10 @@ function aggregate(status: "activity_detected" | "no_activity_signal_observed" |
               changedPixelRatio: 0.06,
               gradientChangeRatio: 0.08,
               nearCameraScore: status === "activity_detected" && camera === "back" ? 0.75 : 0.3,
+              occlusionFlatRatio: status === "activity_detected" && camera === "back" ? 0.55 : 0,
+              occlusionQualifyingSamples:
+                status === "activity_detected" && camera === "back" ? 2 : 0,
+              occlusionScore: status === "activity_detected" && camera === "back" ? 0.75 : 0,
               qualifyingSamples: status === "activity_detected" && camera === "back" ? 2 : 0,
             },
       schemaVersion: 1,

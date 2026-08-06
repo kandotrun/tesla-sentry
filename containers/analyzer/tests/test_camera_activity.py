@@ -18,7 +18,7 @@ from sentry_analyzer.camera_activity import (
 
 
 def metrics(score: float = 0.75, qualifying: int = 2) -> CameraActivityMetrics:
-    return CameraActivityMetrics(0.06, 0.08, score, qualifying)
+    return CameraActivityMetrics(0.06, 0.08, score, qualifying, 0.55, qualifying, score)
 
 
 def direction(
@@ -78,6 +78,9 @@ class CameraActivitySchemaTests(unittest.TestCase):
                             "changedPixelRatio",
                             "gradientChangeRatio",
                             "nearCameraScore",
+                            "occlusionFlatRatio",
+                            "occlusionQualifyingSamples",
+                            "occlusionScore",
                             "qualifyingSamples",
                         ),
                     )
@@ -138,7 +141,15 @@ class CameraActivitySchemaTests(unittest.TestCase):
             lambda: replace(active, analysis_duration_ms=2**53),
             lambda: replace(active, metrics=metrics(math.nan)),
             lambda: replace(active, metrics=metrics(math.inf)),
-            lambda: replace(active, metrics=CameraActivityMetrics(0.5, 0.5, 0.5, -1)),
+            lambda: replace(active, metrics=CameraActivityMetrics(0.5, 0.5, 0.5, -1, 0.5, 0, 0.5)),
+            lambda: replace(
+                active,
+                metrics=CameraActivityMetrics(0.5, 0.5, 0.5, 0, 0.5, -1, 0.5),
+            ),
+            lambda: replace(
+                active,
+                metrics=CameraActivityMetrics(0.5, 0.5, 0.5, 0, 1.5, 0, 0.5),
+            ),
         )
         for build in invalid:
             with self.subTest(build=build), self.assertRaises(CameraActivityResultError):

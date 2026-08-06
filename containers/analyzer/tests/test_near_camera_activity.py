@@ -4,7 +4,10 @@ import unittest
 from itertools import pairwise
 
 from sentry_analyzer.camera_activity import analyze_camera_frames
-from sentry_analyzer.near_camera_activity import NearCameraActivityDetector
+from sentry_analyzer.near_camera_activity import (
+    NearCameraActivityDetector,
+    measure_near_camera_change,
+)
 from sentry_analyzer.temporal_activity import GrayFrame
 
 WIDTH = 160
@@ -18,6 +21,15 @@ def textured_frame(index: int, variant: int = 0) -> GrayFrame:
         for x in range(WIDTH)
     )
     return GrayFrame(index * 125, pixels)
+
+
+def occluded_frame(index: int, occlusion_value: int | None) -> GrayFrame:
+    pixels = bytearray((x + y * 2) % 64 for y in range(HEIGHT) for x in range(WIDTH))
+    if occlusion_value is not None:
+        for y in range(HEIGHT // 3, HEIGHT):
+            for x in range(WIDTH // 4, WIDTH):
+                pixels[y * WIDTH + x] = (occlusion_value + (x * 3 + y * 5) % 9) % 256
+    return GrayFrame(index * 125, bytes(pixels))
 
 
 class NearCameraActivityTests(unittest.TestCase):
@@ -64,6 +76,58 @@ class NearCameraActivityTests(unittest.TestCase):
         self.assertEqual(result.status, "no_activity_signal_observed")
         self.assertIsNone(result.candidate_timestamp_ms)
         self.assertIsNotNone(result.metrics)
+
+    def test_flat_occlusion_transition_reports_high_flat_ratio(self) -> None:
+        sample = measure_near_camera_change(
+            125, occluded_frame(0, None).pixels, occluded_frame(1, 96).pixels, WIDTH, HEIGHT
+        )
+
+        self.assertGreaterEqual(sample.flat_ratio, 0.40)
+        self.assertLessEqual(sample.bbox_ratio, 0.85)
+        self.assertGreaterEqual(sample.occlusion_score, 0.50)
+
+    def test_uniform_brightness_change_is_not_occlusion(self) -> None:
+        sample = measure_near_camera_change(
+            125, bytes([60]) * (WIDTH * HEIGHT), bytes([140]) * (WIDTH * HEIGHT), WIDTH, HEIGHT
+        )
+
+        self.assertEqual(sample.occlusion_score, 0.0)
+
+    def test_occlusion_channel_detects_sustained_covering_without_motion_channel(self) -> None:
+        detector = NearCameraActivityDetector(WIDTH, HEIGHT)
+        frames = [
+            occluded_frame(index, 70 if index % 2 == 0 else 150 if 3 <= index <= 8 else None)
+            for index in range(32)
+        ]
+        for previous, current in pairwise(frames):
+            detector.observe(current.timestamp_ms, previous.pixels, current.pixels)
+
+        self.assertIsNotNone(detector.occlusion_candidate)
+        self.assertGreaterEqual(detector.occlusion_qualifying_samples, 2)
+        self.assertIsNone(detector.candidate)
+
+    def test_camera_analysis_reports_occlusion_metrics(self) -> None:
+        frames = [
+            occluded_frame(index, 70 if index % 2 == 0 else 150 if 5 <= index <= 8 else None)
+            for index in range(32)
+        ]
+
+        result = analyze_camera_frames("back", "back-occl", frames)
+
+        self.assertEqual(result.status, "activity_detected")
+        assert result.metrics is not None
+        self.assertGreaterEqual(result.metrics.occlusion_qualifying_samples, 2)
+        self.assertGreaterEqual(result.metrics.occlusion_flat_ratio, 0.40)
+        self.assertLess(result.metrics.near_camera_score, 0.70)
+
+    def test_single_occlusion_transition_is_not_activity(self) -> None:
+        frames = [occluded_frame(index, 96 if index >= 5 else None) for index in range(32)]
+
+        result = analyze_camera_frames("back", "back-brief", frames)
+
+        self.assertEqual(result.status, "no_activity_signal_observed")
+        assert result.metrics is not None
+        self.assertEqual(result.metrics.occlusion_qualifying_samples, 1)
 
 
 if __name__ == "__main__":

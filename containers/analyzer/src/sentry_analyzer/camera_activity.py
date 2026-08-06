@@ -9,7 +9,7 @@ from typing import Final, Literal, TypedDict, assert_never
 from .temporal_activity import GrayFrame
 
 SCHEMA_VERSION: Final = 1
-ANALYZER_VERSION: Final = "camera-temporal-activity-v1"
+ANALYZER_VERSION: Final = "camera-temporal-activity-v2"
 SOURCE: Final = "camera_temporal_activity"
 SAFE_IDENTIFIER: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -46,13 +46,16 @@ class CameraActivityMetricsPayload(TypedDict):
     changedPixelRatio: float
     gradientChangeRatio: float
     nearCameraScore: float
+    occlusionFlatRatio: float
+    occlusionQualifyingSamples: int
+    occlusionScore: float
     qualifyingSamples: int
 
 
 class CameraActivityResultPayload(TypedDict):
     analysisDurationMs: int
     analyzedFrames: int
-    analyzerVersion: Literal["camera-temporal-activity-v1"]
+    analyzerVersion: Literal["camera-temporal-activity-v2"]
     camera: KnownCamera
     candidateTimestampMs: int | None
     clipId: str
@@ -64,7 +67,7 @@ class CameraActivityResultPayload(TypedDict):
 
 
 class CameraActivityEventPayload(TypedDict):
-    analyzerVersion: Literal["camera-temporal-activity-v1"]
+    analyzerVersion: Literal["camera-temporal-activity-v2"]
     cameras: list[CameraActivityResultPayload]
     eventId: str
     schemaVersion: Literal[1]
@@ -90,22 +93,31 @@ class CameraActivityMetrics:
     gradient_change_ratio: float
     near_camera_score: float
     qualifying_samples: int
+    occlusion_flat_ratio: float
+    occlusion_qualifying_samples: int
+    occlusion_score: float
 
     def is_valid(self) -> bool:
         scores = (
             self.changed_pixel_ratio,
             self.gradient_change_ratio,
             self.near_camera_score,
+            self.occlusion_flat_ratio,
+            self.occlusion_score,
         )
-        return all(
-            math.isfinite(score) and 0.0 <= score <= 1.0 for score in scores
-        ) and _safe_integer(self.qualifying_samples)
+        return all(math.isfinite(score) and 0.0 <= score <= 1.0 for score in scores) and all(
+            _safe_integer(count)
+            for count in (self.qualifying_samples, self.occlusion_qualifying_samples)
+        )
 
     def to_dict(self) -> CameraActivityMetricsPayload:
         return {
             "changedPixelRatio": round(self.changed_pixel_ratio, 6),
             "gradientChangeRatio": round(self.gradient_change_ratio, 6),
             "nearCameraScore": round(self.near_camera_score, 6),
+            "occlusionFlatRatio": round(self.occlusion_flat_ratio, 6),
+            "occlusionQualifyingSamples": self.occlusion_qualifying_samples,
+            "occlusionScore": round(self.occlusion_score, 6),
             "qualifyingSamples": self.qualifying_samples,
         }
 

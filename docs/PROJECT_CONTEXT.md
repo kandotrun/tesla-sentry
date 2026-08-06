@@ -133,8 +133,8 @@ Webの`App`は任意の`analysisVerdict`を`ContactVerdictPanel`へ渡せる。�
 ユーザー確認済みの実接触窓を基準に、Model Yの固定された6方向camera roleを保った時間変化producerを追加した。
 
 - front専用と他5方向用のH.264 display/coded/crop固定profile
-- 8 fps、160×104 grayscaleで画素差とgradient変化をstream解析する`camera-temporal-activity-v1`
-- 4 transition以内にscore 0.70以上が2回続いた場合だけ`activity_detected`にする持続条件
+- 8 fps、160×104 grayscaleで画素差とgradient変化をstream解析する`camera-temporal-activity-v2`
+- motion channelは4 transition以内に`nearCameraScore`0.70以上が2回、occlusion channelはflat変化とbounding box条件を満たす`occlusionScore`0.50以上が2回続いた場合に`activity_detected`にする持続条件
 - 方向別11 key、6方向aggregate 6 keyのPython/TypeScript固定Schemaとcross-language fixture
 - 6入力の欠落、重複ID・path・実ファイルidentity、順序違い、path traversal、symlink、解析中のmetadata・identity変更を拒否するread-only CLI
 - activityを`possible_contact`へ限定し、直接repeater幾何の`contact`を常に優先するadditive classifier
