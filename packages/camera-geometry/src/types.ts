@@ -74,7 +74,7 @@ export interface CameraActivityMetrics {
 interface CameraActivityDirectionBase {
   readonly analysisDurationMs: number;
   readonly analyzedFrames: number;
-  readonly analyzerVersion: "camera-temporal-activity-v2";
+  readonly analyzerVersion: "camera-temporal-activity-v3";
   readonly camera: CameraActivityCamera;
   readonly clipId: string;
   readonly schemaVersion: 1;
@@ -102,7 +102,7 @@ export type CameraActivityDirectionEvidence =
     });
 
 export interface CameraActivityEventEvidence {
-  readonly analyzerVersion: "camera-temporal-activity-v2";
+  readonly analyzerVersion: "camera-temporal-activity-v3";
   readonly cameras: readonly CameraActivityDirectionEvidence[];
   readonly eventId: string;
   readonly schemaVersion: 1;

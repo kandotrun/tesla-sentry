@@ -33,7 +33,7 @@ class FFmpegCameraActivityMedia(FFmpegBackImpactMedia):
         self.camera = camera
 
     def stream_frames(self, input_handle: InputHandle) -> Iterable[GrayFrame]:
-        if not probe_is_supported_for_camera(self.camera, self._probe(input_handle)):
+        if not probe_is_supported_for_camera(self.camera, self.probe(input_handle)):
             raise MediaIssue("unsupported_video")
         yield from self._decode(input_handle)
 

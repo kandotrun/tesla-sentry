@@ -1,4 +1,4 @@
-# カメラ時間変化解析契約 v2
+# カメラ時間変化解析契約 v3
 
 ## 目的
 
@@ -36,7 +36,13 @@ activity判定は2つの独立channelを持つ。
 1. motion channel: `nearCameraScore >= 0.70`が4 transition以内に2回以上。
 2. occlusion channel: `changedPixelRatio`が0.04以上0.80以下、`occlusionFlatRatio >= 0.40`、変化画素のbounding box面積率が0.85以下、かつ`occlusionScore >= 0.50`を満たすtransitionが4 transition以内に2回以上。
 
-どちらか一方のchannelが成立すれば`activity_detected`とする。候補は成立channelの条件を満たしたwindow内の最大scoreのtransitionで、同点時は最初のtimestampを使う。全体輝度変化だけではgradient条件もocclusion条件も満たさない。
+v3ではchannel単独の成立に加え、次のcross-channel gateを適用する。
+
+1. dual channel: motion候補とocclusion候補が500 ms以内にあり、occlusion scoreが0.90以上なら両channelの証拠が揃った近接事象として採用する。
+2. motion単独候補はocclusion backingを要求する。`occlusionQualifyingSamples == 0`、または候補transitionの`occlusionScore < 0.30`なら棄却する。自車移動や遠景trafficのような、画面全体が動くが遮蔽を伴わない事象を除外するためである。
+3. occlusion単独候補は近接gateを要求する。候補transitionの`changedPixelRatio`が0.08未満なら棄却する。中距離の歩行者や車両のように、flatな遮蔽が見えても画面占有率が小さい事象を除外するためである。
+
+gateを通過したchannelが1つでもあれば`activity_detected`とする。候補は通過channelの条件を満たしたwindow内の最大scoreのtransitionで、同点時は最初のtimestampを使う。全体輝度変化だけではgradient条件もocclusion条件も満たさない。
 
 occlusion channelは、手や平らな物体がレンズ近傍へ来て画面を覆う接触に近い事象を、motion channelより低い閾値で捕まえる。flat領域は前後両方のgradientが小さいことを要求するため、背景の滑らかなpanや均一な明るさ変化では成立しない。
 
@@ -44,7 +50,7 @@ occlusion channelは、手や平らな物体がレンズ近傍へ来て画面を
 
 ## 方向別出力
 
-`schemaVersion: 1`、`analyzerVersion: "camera-temporal-activity-v2"`、`source: "camera_temporal_activity"`の固定11 keyを返す。
+`schemaVersion: 1`、`analyzerVersion: "camera-temporal-activity-v3"`、`source: "camera_temporal_activity"`の固定11 keyを返す。
 
 - `activity_detected`: candidateと7 metricsがあり、issueは空
 - `no_activity_signal_observed`: candidateは`null`、7 metricsがあり、issueは空
@@ -69,6 +75,8 @@ aggregateは固定6 keyを持ち、camera配列は入力と同じ固定順であ
 v1のmotion channelはユーザー確認済み接触窓1件を1件検出し、比較窓7件は0件検出した。同時刻の6方向窓ではバックだけが2 sample以上の持続条件を満たした。
 
 v2では同じ8窓へocclusion channelを追加して再校正した。確認済み接触窓はmotion channel 5 qualifyingとocclusion channel 6 qualifyingで検出し、比較窓7件は両channelとも0件だった。v1の閾値0.70に近い比較窓(max 0.675331)はocclusion channelでscore 0となり、channel追加で分離幅が広がった。詳細は[camera-temporal-activity-calibration-v2.json](../containers/analyzer/tests/fixtures/camera-temporal-activity-calibration-v2.json)。元イベントの6方向同期窓はsource clipが循環録画で残っていないためv2では再現できず、fixtureへ`synchronizedSixCameraWindowAvailable: false`として記録した。
+
+v3ではcross-channel gateを追加して12窓で再校正した。確認済み接触窓1件とnear-miss窓2件はすべて検出し、比較窓9件は0件だった。比較窓にはv2実データスキャンで誤検知となった自車移動・中距離traffic・中距離歩行者の3類型を含め、motion backing gateとocclusion近接gateの両方で棄却されることを確認した。詳細は[camera-temporal-activity-calibration-v3.json](../containers/analyzer/tests/fixtures/camera-temporal-activity-calibration-v3.json)。
 
 これは閾値校正であり、独立blind holdoutを持たないためaccuracy、precision、recallの主張には使わない。
 

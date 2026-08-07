@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Final
 
 from .camera_activity import (
     CameraActivityIssue,
@@ -10,6 +11,8 @@ from .camera_activity import (
 )
 from .near_camera_activity import NearCameraActivityDetector
 from .temporal_activity import GrayFrame, TemporalAnalysisConfig, analyze_temporal_frames
+
+OCCLUSION_PROXIMITY_CHANGED_RATIO: Final = 0.08
 
 
 def analyze_camera_frames(
@@ -34,26 +37,30 @@ def analyze_camera_frames(
         )
     motion_candidate = detector.candidate
     occlusion_candidate = detector.occlusion_candidate
+    dual = False
     if motion_candidate is not None and occlusion_candidate is not None:
         motion_ts = detector.candidate_timestamp_ms
         occlusion_ts = detector.occlusion_candidate_timestamp_ms
         if (
             motion_ts is not None
             and occlusion_ts is not None
-            and abs(motion_ts - occlusion_ts) > 500
-        ) or occlusion_candidate.occlusion_score < 0.90:
+            and abs(motion_ts - occlusion_ts) <= 500
+            and occlusion_candidate.occlusion_score >= 0.90
+        ):
+            dual = True
+        else:
             motion_candidate = None
             occlusion_candidate = None
-    elif (
+    if (
         motion_candidate is not None
-        and detector.occlusion_qualifying_samples > 0
-        and motion_candidate.occlusion_score < 0.30
+        and not dual
+        and (detector.occlusion_qualifying_samples == 0 or motion_candidate.occlusion_score < 0.30)
     ):
         motion_candidate = None
-    elif (
+    if (
         occlusion_candidate is not None
-        and detector.qualifying_samples > 0
-        and occlusion_candidate.near_camera_score < 0.30
+        and not dual
+        and occlusion_candidate.changed_pixel_ratio < OCCLUSION_PROXIMITY_CHANGED_RATIO
     ):
         occlusion_candidate = None
     selected = motion_candidate or occlusion_candidate
