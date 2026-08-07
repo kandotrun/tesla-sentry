@@ -40,7 +40,13 @@ def generate_recording_descriptors(
         if measurements is not None:
             anchor_error = _max_anchor_error(measurements)
     return CameraRecordingDescriptor(
-        anchor_error, camera, codec, cropped, height, rotation_degrees, width,
+        anchor_error,
+        camera,
+        codec,
+        cropped,
+        height,
+        rotation_degrees,
+        width,
     )
 
 

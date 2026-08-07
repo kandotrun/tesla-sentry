@@ -18,7 +18,7 @@
       "!!**/.codegraph",
       "!!containers/analyzer/tests/fixtures/camera-temporal-activity-calibration-v1.json",
       "!!containers/analyzer/tests/fixtures/camera-temporal-activity-calibration-v2.json",
-      "!!packages/camera-geometry/tests/fixtures/camera-temporal-activity-v2.json"
+      "!!packages/camera-geometry/tests/fixtures/camera-temporal-activity-v3.json"
     ]
   },
   "formatter": {

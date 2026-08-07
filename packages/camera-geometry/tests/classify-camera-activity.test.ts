@@ -13,11 +13,11 @@ const ORDER = [
 
 function aggregate(status: "activity_detected" | "no_activity_signal_observed" | "indeterminate") {
   return {
-    analyzerVersion: "camera-temporal-activity-v2",
+    analyzerVersion: "camera-temporal-activity-v3",
     cameras: ORDER.map((camera) => ({
       analysisDurationMs: status === "indeterminate" && camera === "back" ? 0 : 4_000,
       analyzedFrames: status === "indeterminate" && camera === "back" ? 0 : 32,
-      analyzerVersion: "camera-temporal-activity-v2",
+      analyzerVersion: "camera-temporal-activity-v3",
       camera,
       candidateTimestampMs: status === "activity_detected" && camera === "back" ? 1_500 : null,
       clipId: `${camera}-001`,

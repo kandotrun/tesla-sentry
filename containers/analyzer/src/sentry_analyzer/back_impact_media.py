@@ -55,7 +55,7 @@ class FFmpegBackImpactMedia:
         self.deadline_seconds = deadline_seconds
         self.environment = {"LANG": "C", "LC_ALL": "C", "PATH": os.defpath}
 
-    def _probe(self, input_handle: InputHandle) -> ProbeMetadata:
+    def probe(self, input_handle: InputHandle) -> ProbeMetadata:
         sps_crop = self._trace_sps(input_handle)
         payload = self._run_probe(
             input_handle,
@@ -135,7 +135,7 @@ class FFmpegBackImpactMedia:
     def _capture_output(self, process: subprocess.Popen[bytes]) -> tuple[int, bytes]:
         stream = process.stdout or process.stderr
         if stream is None:
-            self._stop(process)
+            self.stop(process)
             raise MediaProcessError("pipes")
         deadline = time.monotonic() + self.deadline_seconds
         with io.BytesIO() as output:
@@ -169,12 +169,12 @@ class FFmpegBackImpactMedia:
             finally:
                 selector.close()
                 if process.poll() is None:
-                    self._stop(process)
+                    self.stop(process)
                 stream.close()
             return return_code, output.getvalue()
 
     def stream_frames(self, input_handle: InputHandle) -> Iterable[GrayFrame]:
-        if not probe_is_supported(self._probe(input_handle)):
+        if not probe_is_supported(self.probe(input_handle)):
             raise MediaIssue("unsupported_video")
         yield from self._decode(input_handle)
 
@@ -204,7 +204,7 @@ class FFmpegBackImpactMedia:
 
     def read_process(self, process: subprocess.Popen[bytes]) -> Generator[GrayFrame]:
         if process.stdout is None or process.stderr is None:
-            self._stop(process)
+            self.stop(process)
             raise MediaProcessError("pipes")
         frame = bytearray()
         frame_index = 0
@@ -216,7 +216,7 @@ class FFmpegBackImpactMedia:
             while selector.get_map():
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
-                    self._stop(process)
+                    self.stop(process)
                     raise MediaIssue("analysis_failed")
                 for key, _ in selector.select(min(remaining, 0.25)):
                     size = FRAME_BYTES - len(frame) if key.data == "stdout" else 65_536
@@ -231,19 +231,19 @@ class FFmpegBackImpactMedia:
                             frame_index += 1
             return_code = process.wait(timeout=max(0.1, deadline - time.monotonic()))
         except (OSError, subprocess.TimeoutExpired) as error:
-            self._stop(process)
+            self.stop(process)
             raise MediaProcessError("stream") from error
         finally:
             selector.close()
             if process.poll() is None:
-                self._stop(process)
+                self.stop(process)
             process.stdout.close()
             process.stderr.close()
         if return_code != 0 or frame:
             raise MediaIssue("decode_failed")
 
     @staticmethod
-    def _stop(process: subprocess.Popen[bytes]) -> None:
+    def stop(process: subprocess.Popen[bytes]) -> None:
         try:
             process.terminate()
         except ProcessLookupError:

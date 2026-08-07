@@ -9,7 +9,7 @@ from typing import Final, Literal, TypedDict, assert_never
 from .temporal_activity import GrayFrame
 
 SCHEMA_VERSION: Final = 1
-ANALYZER_VERSION: Final = "camera-temporal-activity-v2"
+ANALYZER_VERSION: Final = "camera-temporal-activity-v3"
 SOURCE: Final = "camera_temporal_activity"
 SAFE_IDENTIFIER: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -55,7 +55,7 @@ class CameraActivityMetricsPayload(TypedDict):
 class CameraActivityResultPayload(TypedDict):
     analysisDurationMs: int
     analyzedFrames: int
-    analyzerVersion: Literal["camera-temporal-activity-v2"]
+    analyzerVersion: Literal["camera-temporal-activity-v3"]
     camera: KnownCamera
     candidateTimestampMs: int | None
     clipId: str
@@ -67,7 +67,7 @@ class CameraActivityResultPayload(TypedDict):
 
 
 class CameraActivityEventPayload(TypedDict):
-    analyzerVersion: Literal["camera-temporal-activity-v2"]
+    analyzerVersion: Literal["camera-temporal-activity-v3"]
     cameras: list[CameraActivityResultPayload]
     eventId: str
     schemaVersion: Literal[1]

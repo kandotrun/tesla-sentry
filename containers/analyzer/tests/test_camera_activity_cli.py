@@ -64,6 +64,15 @@ def frame(index: int, variant: int = 0) -> GrayFrame:
     )
 
 
+def patch_frame(index: int, patch_value: int | None, size: int) -> GrayFrame:
+    pixels = bytearray((x + y * 2) % 64 for y in range(HEIGHT) for x in range(WIDTH))
+    if patch_value is not None:
+        for y in range(HEIGHT // 2, HEIGHT // 2 + size):
+            for x in range(WIDTH // 2, WIDTH // 2 + size):
+                pixels[y * WIDTH + x] = (patch_value + (x * 3 + y * 5) % 9) % 256
+    return GrayFrame(index * 125, bytes(pixels))
+
+
 class FakeMedia(CameraActivityMedia):
     def __init__(
         self,
@@ -79,10 +88,13 @@ class FakeMedia(CameraActivityMedia):
         _ = input_handle
         if self.camera == self.failed:
             raise MediaIssue("decode_failed")
-        frames = [frame(index) for index in range(32)]
+        frames = [patch_frame(index, None, 40) for index in range(32)]
         if self.camera == "back" and self.emit_activity:
-            frames[12] = frame(12, 1)
-            frames[13] = frame(13, 2)
+            frames[10] = patch_frame(10, 80, 40)
+            frames[11] = patch_frame(11, 160, 40)
+            frames[12] = patch_frame(12, 80, 40)
+            frames[13] = frame(13)
+            frames[14] = frame(14, 1)
         return frames
 
 

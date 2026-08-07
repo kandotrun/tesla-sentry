@@ -37,9 +37,6 @@ class CaptureMedia(FFmpegBackImpactMedia):
     def capture(self, process: subprocess.Popen[bytes]) -> tuple[int, bytes]:
         return self._capture_output(process)
 
-    def stop(self, process: subprocess.Popen[bytes]) -> None:
-        self._stop(process)
-
 
 class BackImpactCaptureProcessTests(unittest.TestCase):
     def write_executable(self, path: Path, source: str) -> None:

@@ -85,22 +85,38 @@ def _measure_anchor_y(
     for y in range(y_start, y_end):
         if car_body_on_left:
             car_body_mean = _slice_luma(
-                pixels, frame_width, anchor_x_px - ANCHOR_FLANK_HALF_WIDTH, y,
-                ANCHOR_FLANK_HALF_WIDTH, ANCHOR_SLICE_HALF_HEIGHT,
+                pixels,
+                frame_width,
+                anchor_x_px - ANCHOR_FLANK_HALF_WIDTH,
+                y,
+                ANCHOR_FLANK_HALF_WIDTH,
+                ANCHOR_SLICE_HALF_HEIGHT,
             )
             outside_mean = _slice_luma(
-                pixels, frame_width, anchor_x_px + ANCHOR_FLANK_HALF_WIDTH, y,
-                ANCHOR_FLANK_HALF_WIDTH, ANCHOR_SLICE_HALF_HEIGHT,
+                pixels,
+                frame_width,
+                anchor_x_px + ANCHOR_FLANK_HALF_WIDTH,
+                y,
+                ANCHOR_FLANK_HALF_WIDTH,
+                ANCHOR_SLICE_HALF_HEIGHT,
             )
             score = outside_mean - car_body_mean
         else:
             outside_mean = _slice_luma(
-                pixels, frame_width, anchor_x_px - ANCHOR_FLANK_HALF_WIDTH, y,
-                ANCHOR_FLANK_HALF_WIDTH, ANCHOR_SLICE_HALF_HEIGHT,
+                pixels,
+                frame_width,
+                anchor_x_px - ANCHOR_FLANK_HALF_WIDTH,
+                y,
+                ANCHOR_FLANK_HALF_WIDTH,
+                ANCHOR_SLICE_HALF_HEIGHT,
             )
             car_body_mean = _slice_luma(
-                pixels, frame_width, anchor_x_px + ANCHOR_FLANK_HALF_WIDTH, y,
-                ANCHOR_FLANK_HALF_WIDTH, ANCHOR_SLICE_HALF_HEIGHT,
+                pixels,
+                frame_width,
+                anchor_x_px + ANCHOR_FLANK_HALF_WIDTH,
+                y,
+                ANCHOR_FLANK_HALF_WIDTH,
+                ANCHOR_SLICE_HALF_HEIGHT,
             )
             score = outside_mean - car_body_mean
         if score > best_score:
@@ -125,7 +141,11 @@ def extract_anchor_measurements(
         anchor_x_px = _pixel_x(anchor.normalized_x)
         anchor_y_px = _pixel_y(anchor.normalized_y)
         found_y = _measure_anchor_y(
-            frame.pixels, frame_width, anchor_x_px, anchor_y_px, car_body_on_left,
+            frame.pixels,
+            frame_width,
+            anchor_x_px,
+            anchor_y_px,
+            car_body_on_left,
         )
         error_px = abs(found_y - anchor_y_px)
         error_normalized = error_px / DIAGONAL_PX

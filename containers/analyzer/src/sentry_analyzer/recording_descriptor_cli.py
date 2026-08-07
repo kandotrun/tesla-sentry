@@ -10,8 +10,8 @@ from typing import Final, TypedDict
 
 from .back_impact_io import InputHandle, open_input, open_output
 from .back_impact_media import FFmpegBackImpactMedia, MediaProcessError
-from .back_impact_probe import MediaIssue
-from .camera_activity_cli import ContractError, parse_request
+from .back_impact_probe import JsonValue, MediaIssue
+from .camera_activity_cli import CameraActivityRequest, ContractError, parse_request
 from .camera_activity_probe import profile_for_camera
 from .recording_descriptor import generate_recording_descriptors
 from .temporal_activity import GrayFrame
@@ -55,7 +55,7 @@ def _capture_full_midpoint_frame(
 
 
 def _probe_passes(media: FFmpegBackImpactMedia, input_handle: InputHandle) -> bool:
-    probe = media._probe(input_handle)
+    probe = media.probe(input_handle)
     return (
         probe.codec_name == "h264"
         and probe.coded_width == 1456
@@ -70,7 +70,6 @@ def _decode_full(
     media: FFmpegBackImpactMedia,
     input_handle: InputHandle,
 ):
-    import io
     import os
     import selectors
     import subprocess
@@ -99,7 +98,7 @@ def _decode_full(
         raise MediaProcessError("decode") from error
 
     if process.stdout is None or process.stderr is None:
-        media._stop(process)
+        media.stop(process)
         raise MediaProcessError("pipes")
     frame = bytearray()
     frame_index = 0
@@ -111,7 +110,7 @@ def _decode_full(
         while selector.get_map():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                media._stop(process)
+                media.stop(process)
                 raise MediaIssue("analysis_failed")
             for key, _ in selector.select(min(remaining, 0.25)):
                 size = FULL_FRAME_BYTES - len(frame) if key.data == "stdout" else 65536
@@ -126,12 +125,12 @@ def _decode_full(
                         frame_index += 1
         return_code = process.wait(timeout=max(0.1, deadline - time.monotonic()))
     except (OSError, subprocess.TimeoutExpired) as error:
-        media._stop(process)
+        media.stop(process)
         raise MediaProcessError("stream") from error
     finally:
         selector.close()
         if process.poll() is None:
-            media._stop(process)
+            media.stop(process)
         process.stdout.close()
         process.stderr.close()
     if return_code != 0 or frame:
@@ -139,7 +138,7 @@ def _decode_full(
 
 
 def execute_request(
-    request: object,
+    request: CameraActivityRequest,
     input_root: Path,
     output_root: Path,
 ) -> list[RecordingDescriptorPayload]:
@@ -170,15 +169,17 @@ def execute_request(
                 0,
                 anchor_frame,
             )
-            descriptors.append({
-                "anchorErrorNormalized": descriptor.anchor_error_normalized,
-                "camera": descriptor.camera,
-                "codec": descriptor.codec,
-                "cropped": descriptor.cropped,
-                "height": descriptor.height,
-                "rotationDegrees": descriptor.rotation_degrees,
-                "width": descriptor.width,
-            })
+            descriptors.append(
+                {
+                    "anchorErrorNormalized": descriptor.anchor_error_normalized,
+                    "camera": descriptor.camera,
+                    "codec": descriptor.codec,
+                    "cropped": descriptor.cropped,
+                    "height": descriptor.height,
+                    "rotationDegrees": descriptor.rotation_degrees,
+                    "width": descriptor.width,
+                }
+            )
 
         for handle in handles:
             handle.verify_unchanged()
@@ -190,14 +191,16 @@ def execute_request(
             "schemaVersion": 1,
         }
         serialized = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
-        output_handle.write(
-            (serialized + "\n").encode(),
-            lambda: all(handle.verify_unchanged() for handle in handles),
-        )
+
+        def verify_inputs() -> None:
+            for handle in handles:
+                handle.verify_unchanged()
+
+        output_handle.write((serialized + "\n").encode(), verify_inputs)
         return descriptors
 
 
-def _read_request(path: Path) -> dict:
+def _read_request(path: Path) -> dict[str, JsonValue]:
     try:
         with path.open("rb") as request_file:
             raw = request_file.read(MAX_REQUEST_BYTES + 1)
@@ -206,7 +209,7 @@ def _read_request(path: Path) -> dict:
     if not raw or len(raw) > MAX_REQUEST_BYTES:
         raise ContractError("request")
     try:
-        payload = json.loads(raw.decode("utf-8"))
+        payload: JsonValue = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ContractError("request") from error
     if not isinstance(payload, dict):
@@ -240,13 +243,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 5
     repeater_anchors = sum(
-        1 for d in descriptors if d["camera"] in ("left_repeater", "right_repeater")
+        1
+        for d in descriptors
+        if d["camera"] in ("left_repeater", "right_repeater")
         and d["anchorErrorNormalized"] is not None
     )
-    summary = json.dumps({
-        "cameras": len(descriptors),
-        "repeaterAnchorsExtracted": repeater_anchors,
-    })
+    summary = json.dumps(
+        {
+            "cameras": len(descriptors),
+            "repeaterAnchorsExtracted": repeater_anchors,
+        }
+    )
     print(summary)
     return 0
 

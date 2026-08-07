@@ -7,20 +7,23 @@ from pathlib import Path
 from sentry_analyzer.back_impact_probe import JsonValue
 
 
-class CameraActivityCalibrationV2FixtureTests(unittest.TestCase):
-    def test_fixture_records_per_window_channel_separation_without_private_metadata(self) -> None:
-        fixture = Path(__file__).parent / "fixtures/camera-temporal-activity-calibration-v2.json"
+class CameraActivityCalibrationV3FixtureTests(unittest.TestCase):
+    def test_fixture_records_v3_gates_without_private_metadata(self) -> None:
+        fixture = Path(__file__).parent / "fixtures/camera-temporal-activity-calibration-v3.json"
         payload: JsonValue = json.loads(fixture.read_text())
         if not isinstance(payload, dict):
             self.fail("fixture must be a mapping")
-        self.assertEqual(payload["analyzerVersion"], "camera-temporal-activity-v2")
+        self.assertEqual(payload["analyzerVersion"], "camera-temporal-activity-v3")
         self.assertEqual(payload["confirmedTouchWindows"], {"detected": 1, "total": 1})
-        self.assertEqual(payload["comparisonWindows"], {"detected": 0, "total": 7})
-        self.assertIs(payload["independentBlindHoldout"], False)
-        self.assertIs(payload["synchronizedSixCameraWindowAvailable"], False)
+        self.assertEqual(payload["comparisonWindows"], {"detected": 0, "total": 9})
+        thresholds = payload["thresholds"]
+        if not isinstance(thresholds, dict):
+            self.fail("thresholds must be a mapping")
+        self.assertEqual(thresholds["occlusionProximityChangedRatio"], 0.08)
+        self.assertIs(thresholds["motionRequiresOcclusionSupport"], True)
         windows = payload["windows"]
-        if not isinstance(windows, list) or len(windows) < 8:
-            self.fail("fixture must record at least eight windows")
+        if not isinstance(windows, list) or len(windows) < 10:
+            self.fail("fixture must record at least ten windows")
         confirmed = 0
         comparison_activity = 0
         for item in windows:
@@ -44,6 +47,12 @@ class CameraActivityCalibrationV2FixtureTests(unittest.TestCase):
                     confirmed += 1
                 elif not name.startswith("near-miss-"):
                     comparison_activity += 1
+            elif name.startswith("comparison-"):
+                changed = item.get("maximumChangedPixelRatio")
+                if occlusion > 0 and (not isinstance(changed, (int, float)) or changed >= 0.08):
+                    self.fail("suppressed occlusion window must stay below proximity gate")
+                if motion > 0 and occlusion != 0:
+                    self.fail("suppressed motion window must lack occlusion support")
         self.assertEqual(confirmed, 1)
         self.assertEqual(comparison_activity, 0)
         serialized = fixture.read_text()

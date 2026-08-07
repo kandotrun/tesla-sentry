@@ -39,7 +39,7 @@ class CameraActivityFixtureTests(unittest.TestCase):
         serialized = json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")) + "\n"
         fixture = (
             Path(__file__).resolve().parents[3]
-            / "packages/camera-geometry/tests/fixtures/camera-temporal-activity-v2.json"
+            / "packages/camera-geometry/tests/fixtures/camera-temporal-activity-v3.json"
         )
 
         self.assertEqual(serialized.encode(), fixture.read_bytes())

@@ -19,7 +19,7 @@ function direction(camera: CameraActivityCamera, status = "no_activity_signal_ob
   return {
     analysisDurationMs: 4_000,
     analyzedFrames: 32,
-    analyzerVersion: "camera-temporal-activity-v2",
+    analyzerVersion: "camera-temporal-activity-v3",
     camera,
     candidateTimestampMs: status === "activity_detected" ? 1_500 : null,
     clipId: `${camera}-001`,
@@ -44,7 +44,7 @@ function direction(camera: CameraActivityCamera, status = "no_activity_signal_ob
 
 function event(status = "no_activity_signal_observed") {
   return {
-    analyzerVersion: "camera-temporal-activity-v2",
+    analyzerVersion: "camera-temporal-activity-v3",
     cameras: ORDER.map((camera) =>
       direction(
         camera,
@@ -65,7 +65,7 @@ function event(status = "no_activity_signal_observed") {
 describe("parseCameraActivityEvidence", () => {
   it("accepts the exact Python cross-language fixture", () => {
     const fixture = JSON.parse(
-      readFileSync(new URL("./fixtures/camera-temporal-activity-v2.json", import.meta.url), "utf8"),
+      readFileSync(new URL("./fixtures/camera-temporal-activity-v3.json", import.meta.url), "utf8"),
     );
 
     expect(parseCameraActivityEvidence(fixture)).toEqual(fixture);
