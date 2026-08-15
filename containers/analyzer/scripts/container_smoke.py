@@ -138,12 +138,21 @@ def _write_activity_frames(root: Path, changing: bool) -> Path:
     frames = root / ("camera-changing-frames" if changing else "camera-static-frames")
     frames.mkdir()
     for index in range(32):
-        variant = 1 if changing and index == 12 else 2 if changing and index == 13 else 0
-        pixels = bytes(
-            (x * (17 + variant * 13) + y * (31 + variant * 7) + variant * 97) % 256
-            for y in range(104)
-            for x in range(160)
-        )
+        # V3 requires occlusion support and nearby motion, so the changing stream
+        # mirrors the dual-channel sequence covered by the in-memory tests.
+        pixels = bytearray((x + y * 2) % 64 for y in range(104) for x in range(160))
+        patch_value = {10: 80, 11: 160, 12: 80}.get(index) if changing else None
+        if patch_value is not None:
+            for y in range(104 // 2, 104 // 2 + 40):
+                for x in range(160 // 2, 160 // 2 + 40):
+                    pixels[y * 160 + x] = (patch_value + (x * 3 + y * 5) % 9) % 256
+        elif changing and index in {13, 14}:
+            variant = index - 13
+            pixels = bytearray(
+                (x * (17 + variant * 13) + y * (31 + variant * 7) + variant * 97) % 256
+                for y in range(104)
+                for x in range(160)
+            )
         (frames / f"{index:03d}.pgm").write_bytes(b"P5\n160 104\n255\n" + pixels)
     return frames
 
